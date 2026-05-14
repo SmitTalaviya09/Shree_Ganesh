@@ -1,0 +1,187 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Manager</div>
+            <div class="htitle">Client Registrations</div>
+            <div class="hsub">Manage clients who can access the order portal</div>
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat">
+                <span class="hs-val">{totalCount}</span>
+                <span class="hs-lbl">Total Clients</span>
+            </div>
+            <button class="btn-add" onclick={handleOpenAdd}>＋ Add Client</button>
+        </div>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="toolbar">
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="search"
+                placeholder="Search by client name, customer code, GST or mobile…"
+                value={searchTerm}
+                oninput={handleSearch} />
+            <template if:true={searchTerm}>
+                <button class="search-clear" onclick={handleClearSearch}>✕</button>
+            </template>
+        </div>
+        <span class="count-lbl">{filteredCount} / {totalCount} client(s)</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tbl-outer">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Loading…</div>
+        </template>
+        <template if:false={isLoading}>
+            <template if:true={hasClients}>
+                <div class="tbl-head">
+                    <div class="th">Client Name</div>
+                    <div class="th">Customer Code</div>
+                    <div class="th">GST Number</div>
+                    <div class="th">Mobile</div>
+                    <div class="th">Added On</div>
+                    <div class="th th-c">Actions</div>
+                </div>
+                <div class="tbl-body">
+                    <template for:each={filteredClients} for:item="c">
+                        <div key={c.id} class="tbl-row">
+                            <div class="td td-name">{c.name}</div>
+                            <div class="td td-code">{c.customerCode}</div>
+                            <div class="td td-gst">{c.gst}</div>
+                            <div class="td td-mobile">{c.mobile}</div>
+                            <div class="td td-date">{c.created}</div>
+                            <div class="td td-actions">
+                                <button class="btn-edit"
+                                    data-id={c.id}
+                                    onclick={handleEdit}
+                                    title="Edit">✏️</button>
+                                <button class="btn-del"
+                                    data-id={c.id}
+                                    onclick={handleDeleteClick}
+                                    title="Delete">🗑</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasClients}>
+                <div class="empty-state">
+                    <div class="es-icon">👥</div>
+                    <div class="es-title">
+                        <template if:true={searchTerm}>No clients match your search</template>
+                        <template if:false={searchTerm}>No clients registered yet</template>
+                    </div>
+                    <div class="es-sub">Click "+ Add Client" to register a client for portal access</div>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- ADD / EDIT MODAL -->
+    <template if:true={showModal}>
+        <div class="modal-backdrop" onclick={handleCloseModal}></div>
+        <div class="modal">
+            <div class="modal-hdr">
+                <div>
+                    <div class="modal-eyebrow">Client Portal Access</div>
+                    <div class="modal-title">{modalTitle}</div>
+                </div>
+                <button class="modal-close" onclick={handleCloseModal}>✕</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="mf-group">
+                    <label class="mf-lbl">Client Name <span class="req">*</span></label>
+                    <input class={nameInputClass}
+                        type="text"
+                        placeholder="Full business name"
+                        value={f_name}
+                        oninput={handleNameInput} />
+                    <template if:true={f_nameErr}>
+                        <div class="field-err">Client Name is required</div>
+                    </template>
+                </div>
+
+                <div class="mf-group">
+                    <label class="mf-lbl">Customer Code <span class="req">*</span></label>
+                    <input class={codeInputClass}
+                        type="text"
+                        placeholder="Enter customer code"
+                        value={f_customerCode}
+                        oninput={handleCustomerCodeInput} />
+                    <template if:true={f_customerCodeErr}>
+                        <div class="field-err">Customer Code is required</div>
+                    </template>
+                </div>
+
+                <div class="mf-group">
+                    <label class="mf-lbl">GST Number <span class="req">*</span></label>
+                    <input class={gstInputClass}
+                        type="text"
+                        placeholder="e.g. 22AAAAA0000A1Z5"
+                        value={f_gst}
+                        oninput={handleGstInput} />
+                    <template if:true={f_gstErr}>
+                        <div class="field-err">GST Number is required</div>
+                    </template>
+                </div>
+
+                <div class="mf-group">
+                    <label class="mf-lbl">Mobile Number <span class="req">*</span></label>
+                    <input class={mobInputClass}
+                        type="tel"
+                        placeholder="10-digit mobile number"
+                        value={f_mobile}
+                        oninput={handleMobileInput} />
+                    <template if:true={f_mobErr}>
+                        <div class="field-err">Mobile Number is required</div>
+                    </template>
+                </div>
+
+                <div class="info-note">
+                    ℹ️ Client will use <strong>GST Number + Mobile</strong> to log in to the order portal.
+                    Make sure these match exactly what the client will type.
+                </div>
+
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCloseModal}>Cancel</button>
+                <button class="btn-save" onclick={handleSave} disabled={isSaving}>
+                    <template if:false={isSaving}>{saveBtnLabel}</template>
+                    <template if:true={isSaving}>Saving…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <template if:true={showDeleteConfirm}>
+        <div class="modal-backdrop" onclick={handleCancelDelete}></div>
+        <div class="modal modal-sm">
+            <div class="modal-hdr modal-hdr-danger">
+                <div class="modal-title">🗑 Remove Client</div>
+                <button class="modal-close" onclick={handleCancelDelete}>✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-msg">
+                    Remove <strong>{deleteTargetName}</strong> from the portal?
+                    They will no longer be able to place orders.
+                </p>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCancelDelete}>Keep</button>
+                <button class="btn-danger" onclick={handleConfirmDelete} disabled={isDeleting}>
+                    <template if:false={isDeleting}>🗑 Yes, Remove</template>
+                    <template if:true={isDeleting}>Removing…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</div>
+</template>

@@ -1,0 +1,209 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Admin</div>
+            <div class="htitle">Dispatch Management</div>
+            <div class="hsub">All dispatched orders — mark as completed</div>
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat hsp">
+                <span class="hs-val">{partialCount}</span>
+                <span class="hs-lbl">Partial</span>
+            </div>
+            <div class="hero-stat hsg">
+                <span class="hs-val">{fullyCount}</span>
+                <span class="hs-lbl">Fully Dispatched</span>
+            </div>
+            <!-- Bulk complete button -->
+            <template if:true={hasSelected}>
+                <button class="btn-bulk-complete"
+                    onclick={handleBulkComplete}
+                    disabled={isLoading}>
+                    <template if:false={isLoading}>
+                        ✅ Mark Complete ({selectedCount})
+                    </template>
+                    <template if:true={isLoading}>Processing…</template>
+                </button>
+            </template>
+        </div>
+    </div>
+
+    <!-- FILTER RIBBON -->
+    <div class="fribbon">
+        <input class="fi fi-w" type="search"
+            placeholder="🔍 Search order, customer, item..."
+            value={searchTerm} oninput={handleSearch} />
+
+        <!-- Status filter — only 2 statuses -->
+        <select class="fi" onchange={handleStatusFilter}>
+            <option value="">All Dispatches</option>
+            <option value="Fully Dispatched">Fully Dispatched</option>
+            <option value="Partially Dispatched">Partially Dispatched</option>
+        </select>
+
+        <div class="fsep"></div>
+        <span class="f-count">{filteredOrders.length} order(s)</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tbl-wrap">
+        <template if:true={hasOrders}>
+            <template if:true={isLoading}>
+                <div class="loading">⏳ Loading…</div>
+            </template>
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th class="th-chk">
+                            <input type="checkbox"
+                                class="cb"
+                                checked={allVisibleSelected}
+                                onchange={handleSelectAll} />
+                        </th>
+                        <!-- <th>Customer</th>
+                        <th>Item · Color · Karat</th>
+                        <th class="th-c">Order Qty</th>
+                        <th class="th-c">Dispatched</th>
+                        <th>Status</th>
+                        <th>Dispatched On</th>
+                        <th class="th-c">Action</th> -->
+                        <th>Customer</th>
+                        <th>Item Details</th>
+                        <th class="th-c">Order Qty</th>
+                        <th class="th-c">Dispatched</th>
+                        <th class="th-c">Pending</th>
+                        <th>Status</th>
+                        <!-- <th>Priority</th> -->
+                        <th>Dispatched On</th>
+                        <th class="th-c">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredOrders} for:item="o">
+                        <tr key={o.id} class={o.rowClass}
+                            onclick={handleRowSelect}
+                            data-code={o.code}>
+
+                            <!-- Checkbox -->
+                            <td onclick={handleRowSelect} data-code={o.code}>
+                                <div class={o.chkClass}></div>
+                            </td>
+
+                            <!-- Customer -->
+                            <td>
+                                <div class="td-cust">{o.customer}</div>
+                                <template if:true={o.customerCode}>
+                                    <div class="td-ccode">{o.customerCode}</div>
+                                </template>
+                                <template if:true={o.customerMobile}>
+                                    <div class="td-ccode">📞 {o.customerMobile}</div>
+                                </template>
+                            </td>
+
+                            <!-- Item · Color · Karat -->
+                            <td>
+                                <div class="td-item">{o.itemCode}</div>
+                                <div class="td-meta">{o.colorKarat}</div>
+                                <template if:true={o.size}>
+                                    <div class="td-meta">Size: {o.size}</div>
+                                </template>
+
+                                <template if:true={o.itemCategory}>
+                                    <div class="td-meta">{o.itemCategory}</div>
+                                </template>
+
+                                <template if:true={o.remark}>
+                                    <div class="td-remark-full" title={o.remark}>
+                                        {o.remark}
+                                    </div>
+                                </template>
+                            </td>
+
+                            <!-- Order Qty -->
+                            <td class="td-num">
+                                {o.qty}
+                                <span class="td-unit">{o.qtyUnit}</span>
+                            </td>
+
+                            <!-- Dispatched Qty -->
+                            <td class="td-num td-disp">
+                                {o.dispatchedQty}
+                                <span class="td-unit">{o.qtyUnit}</span>
+                            </td>
+                            <td class="td-num td-pending">
+                                {o.pendingQty}
+                                <span class="td-unit">{o.qtyUnit}</span>
+                            </td>
+
+                            <!-- Status -->
+                            <td><span class={o.statusClass}>{o.dispatchStatus}</span></td>
+                            <!-- <td>
+                                <span class={o.priClass}>{o.pri}</span>
+                            </td> -->
+                            <!-- Dispatched On -->
+                            <td class="td-date">{o.dispatchDate}</td>
+
+                            <!-- Action -->
+                            <td class="td-action">
+                                <button class="btn-complete"
+                                    onclick={handleMarkComplete}
+                                    data-id={o.id}
+                                    data-code={o.code}
+                                    disabled={isLoading}>
+                                    Mark Completed
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn-cancel-row"
+                                    data-code={o.code}
+                                    data-id={o.id}
+                                    onclick={handleCancelClick}
+                                    title="Cancel order · return qty to inventory">✕</button>
+                            </td>
+
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template if:true={showCancelConfirm}>
+            <div class="modal-backdrop" onclick={handleCancelAbort}></div>
+            <div class="modal">
+                <div class="modal-hdr">
+                    <div class="modal-title">🗑 Cancel Order</div>
+                    <button class="modal-close" onclick={handleCancelAbort}>✕</button>
+                </div>
+                <div class="modal-body">
+                    <p class="confirm-msg">
+                        Cancel order <strong>{cancelTargetCode}</strong>?
+                    </p>
+                    <p class="confirm-note">
+                        The fulfilled quantity will be returned to inventory. This cannot be undone.
+                    </p>
+                </div>
+                <div class="modal-ftr">
+                    <button class="btn-back" onclick={handleCancelAbort}>Keep Order</button>
+                    <button class="btn-cancel-confirm" onclick={handleCancelConfirm} disabled={isCancelling}>
+                        <template if:false={isCancelling}>🗑 Yes, Cancel Order</template>
+                        <template if:true={isCancelling}>Cancelling…</template>
+                    </button>
+                </div>
+            </div>
+        </template>
+        <template if:false={hasOrders}>
+            <div class="empty-state">
+                <div class="es-icon">🚚</div>
+                <div class="es-title">No dispatched orders yet</div>
+                <div class="es-sub">
+                    <template if:true={hasActiveFilters}>Try adjusting your filters</template>
+                    <template if:false={hasActiveFilters}>Dispatched orders will appear here</template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+</div>
+</template>

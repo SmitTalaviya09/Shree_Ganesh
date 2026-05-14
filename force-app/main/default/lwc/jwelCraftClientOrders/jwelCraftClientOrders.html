@@ -1,0 +1,227 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Manager · Client Portal</div>
+            <div class="htitle">Client Order Review</div>
+            <div class="hsub">Review and accept or reject orders placed from the client portal</div>
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat">
+                <span class="hs-val">{totalCount}</span>
+                <span class="hs-lbl">Pending Review</span>
+            </div>
+            <button class="btn-refresh" onclick={handleRefresh} title="Refresh">↻</button>
+        </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="toolbar">
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="search"
+                placeholder="Search by order ID, client, GST, item code…"
+                value={searchTerm} oninput={handleSearch} />
+            <template if:true={searchTerm}>
+                <button class="search-clear" onclick={handleClearSearch}>✕</button>
+            </template>
+        </div>
+        <span class="count-lbl">{filteredCount} / {totalCount}</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tbl-outer">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Loading client orders…</div>
+        </template>
+        <template if:false={isLoading}>
+            <template if:true={hasOrders}>
+                <div class="tbl-head">
+                    <div class="th">Client</div>
+                    <div class="th">Item · Color · Karat</div>
+                    <div class="th th-c">Qty</div>
+                    <div class="th">Order Date</div>
+                    <div class="th">Remark</div>
+                    <div class="th th-c">Actions</div>
+                </div>
+                <div class="tbl-body">
+                    <template for:each={filteredOrders} for:item="o">
+                        <div key={o.id} class="tbl-row">
+                            <div class="td">
+                                <div class="td-client">{o.client}</div>
+                                <div class="td-sub">{o.mobile}</div>
+                            </div>
+                            <div class="td">
+                                <div class="td-item">{o.itemCode}</div>
+                                <div class="td-sub">{o.color} · {o.karat}</div>
+                                <div class="td-sub">{o.size}</div>
+                            </div>
+                            <div class="td td-num">{o.qty}
+                                <span class="td-unit">{o.unit}</span>
+                            </div>
+                            <div class="td td-date">{o.orderDate}</div>
+                            <div class="td td-remark">
+                                <template if:true={o.hasRemark}>{o.remark}</template>
+                                <template if:false={o.hasRemark}>—</template>
+                            </div>
+                            <div class="td td-actions">
+                                <button class="btn-accept"
+                                    data-id={o.id}
+                                    onclick={handleAcceptClick}
+                                    title="Accept order">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn-reject"
+                                    data-id={o.id}
+                                    onclick={handleRejectClick}
+                                    title="Reject order">
+                                    ✕ Reject
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasOrders}>
+                <div class="empty-state">
+                    <div class="es-icon">✅</div>
+                    <div class="es-title">
+                        <template if:true={searchTerm}>No orders match your search</template>
+                        <template if:false={searchTerm}>No client orders pending review</template>
+                    </div>
+                    <div class="es-sub">New orders from the client portal will appear here</div>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- ══ ACCEPT MODAL ══ -->
+    <template if:true={showAcceptModal}>
+        <div class="modal-backdrop" onclick={handleCloseAccept}></div>
+        <div class="modal modal-accept">
+            <div class="modal-hdr modal-hdr-green">
+                <div>
+                    <div class="modal-eyebrow">Client Order</div>
+                    <div class="modal-title">✓ Accept Order</div>
+                </div>
+                <button class="modal-close" onclick={handleCloseAccept}>✕</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="confirm-block">
+                    <div class="cb-row">
+                        <span class="cb-lbl">Item Code</span>
+                        <span class="cb-val">{acceptItemCode}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Client</span>
+                        <span class="cb-val">{acceptClientName}</span>
+                    </div>
+                </div>
+
+                <div class="accept-fields-grid">
+                    <div class="af-group">
+                        <label class="af-lbl">Color</label>
+                        <input class="af-input af-disabled" type="text"
+                            value={acceptEditColor} readonly />
+                    </div>
+                    <div class="af-group">
+                        <label class="af-lbl">Karat</label>
+                        <input class="af-input af-disabled" type="text"
+                            value={acceptEditKarat} readonly />
+                    </div>
+                    <div class="af-group">
+                        <label class="af-lbl">Quantity</label>
+                        <input class="af-input af-disabled" type="text"
+                            value={acceptEditQtyDisplay} readonly />
+                    </div>
+                    <div class="af-group">
+                        <label class="af-lbl">Size
+                            <span class="af-editable-badge">Editable</span>
+                        </label>
+                        <input class="af-input" type="text"
+                            placeholder="e.g. 5.0 mm, 21.0 mm"
+                            value={acceptSizeDisplay}
+                            oninput={handleAcceptSizeInput} />
+                        <span class="af-hint">Format: 5.0 mm · 5.1 mm · 21.0 mm</span>
+                    </div>
+                </div>
+
+                <div class="af-group">
+                    <label class="af-lbl">Remark
+                        <span class="af-editable-badge">Editable</span>
+                    </label>
+                    <textarea class="reason-input af-textarea"
+                        placeholder="Add or update remark…"
+                        oninput={handleAcceptRemarkInput}
+                        rows="3">{acceptRemarkDisplay}</textarea>
+                </div>
+
+                <div class="accept-note">
+                    ✅ Accepting will move this order to <strong>New</strong> stage
+                    and it will enter the normal production flow.
+                </div>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCloseAccept}>Cancel</button>
+                <button class="btn-confirm-green" onclick={handleConfirmAccept}
+                        disabled={isAccepting}>
+                    <template if:false={isAccepting}>✓ Yes, Accept</template>
+                    <template if:true={isAccepting}>Accepting…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ══ REJECT MODAL ══ -->
+    <template if:true={showRejectModal}>
+        <div class="modal-backdrop" onclick={handleCloseReject}></div>
+        <div class="modal">
+            <div class="modal-hdr modal-hdr-danger">
+                <div>
+                    <div class="modal-eyebrow">Client Order</div>
+                    <div class="modal-title">✕ Reject Order</div>
+                </div>
+                <button class="modal-close" onclick={handleCloseReject}>✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-block">
+                    <div class="cb-row">
+                        <span class="cb-lbl">Order ID</span>
+                        <span class="cb-val">{rejectOrderCode}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Client</span>
+                        <span class="cb-val">{rejectClientName}</span>
+                    </div>
+                </div>
+                <div class="reason-group">
+                    <label class="reason-lbl">
+                        Rejection Reason <span class="req">*</span>
+                    </label>
+                    <textarea class="reason-input"
+                        placeholder="Enter reason — this will be shown to the client…"
+                        value={rejectReason}
+                        oninput={handleReasonInput}
+                        rows="4"></textarea>
+                </div>
+                <div class="reject-note">
+                    🚫 The client will see this reason in their portal.
+                    Be clear and professional.
+                </div>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCloseReject}>Cancel</button>
+                <button class="btn-confirm-red" onclick={handleConfirmReject}
+                        disabled={isRejecting}>
+                    <template if:false={isRejecting}>✕ Reject Order</template>
+                    <template if:true={isRejecting}>Rejecting…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</div>
+</template>

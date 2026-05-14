@@ -1,0 +1,120 @@
+<template>
+    <div class="deleted-page">
+        <div class="hero">
+            <div>
+                <div class="eyebrow">Admin Only</div>
+                <div class="title">Delete Orders</div>
+                <div class="sub">All orders are shown here. Delete removes record from org.</div>
+            </div>
+
+            <button class="refresh-btn" onclick={loadOrders}>⟳ Refresh</button>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="loading">Loading...</div>
+        </template>
+        <div class="filter-bar">
+            <input class="filter-input"
+                type="text"
+                placeholder="Search customer..."
+                value={searchCustomer}
+                oninput={handleCustomerSearch} />
+
+            <input class="filter-input"
+                type="text"
+                placeholder="Search item code..."
+                value={searchItemCode}
+                oninput={handleItemCodeSearch} />
+
+            <select class="filter-select"
+                    value={filterColor}
+                    onchange={handleColorFilter}>
+                <option value="">All Colors</option>
+                <option value="Yellow Gold">Yellow Gold</option>
+                <option value="White Gold">White Gold</option>
+                <option value="Rose Gold">Rose Gold</option>
+                <option value="Silver">Silver</option>
+            </select>
+
+            <select class="filter-select"
+                    value={filterKarat}
+                    onchange={handleKaratFilter}>
+                <option value="">All Karats</option>
+                <option value="9 KT">9 KT</option>
+                <option value="10 KT">10 KT</option>
+                <option value="14 KT">14 KT</option>
+                <option value="18 KT">18 KT</option>
+                <option value="22 KT">22 KT</option>
+                <option value="Silver 75">Silver 75</option>
+                <option value="Silver 925">Silver 925</option>
+            </select>
+
+            <button class="clear-btn" onclick={clearFilters}>Clear</button>
+        </div>
+        <template if:false={isLoading}>
+            <template if:true={hasOrders}>
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Item Code</th>
+                                <th>Size</th>
+                                <th>Color</th>
+                                <th>Karat</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Stage</th>
+                                <th>Order Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <template for:each={filteredOrders} for:item="o">
+                                <tr key={o.id}>
+                                    <td>
+                                        <div class="customer">{o.customer}</div>
+                                        <div class="small">{o.customerCode}</div>
+                                    </td>
+                                    <td><span class="code">{o.itemCode}</span></td>
+                                    <td>{o.size}</td>
+                                    <td><span class="color-pill">{o.color}</span></td>
+                                    <td><span class="karat">{o.karat}</span></td>
+                                    <td class="qty">{o.quantity}</td>
+                                    <td>{o.unit}</td>
+                                    <td>{o.stage}</td>
+                                    <td>{o.orderDate}</td>
+                                    <td>
+                                        <button class="delete-btn"
+                                                data-record-id={o.id}
+                                                onclick={handleDeleteClick}>
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </template>
+
+        <template if:true={showConfirm}>
+            <div class="modal-back"></div>
+            <div class="confirm-modal">
+                <h3>Delete Order?</h3>
+                <p>
+                    Delete order for
+                    <b>{selectedOrder.customer}</b>
+                    / <b>{selectedOrder.itemCode}</b>?
+                </p>
+
+                <div class="modal-actions">
+                    <button class="danger" onclick={confirmDelete}>Yes, Delete</button>
+                    <button class="cancel" onclick={cancelDelete}>Cancel</button>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

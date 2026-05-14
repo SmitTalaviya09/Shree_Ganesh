@@ -1,0 +1,593 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Production Department</div>
+            <div class="htitle">Quick Stock Search</div>
+            <div class="hsub">Check · Add · Clear inventory</div>
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat hsg">
+                <span class="hs-val">{inStockCount}</span>
+                <span class="hs-lbl">In Stock</span>
+            </div>
+            <div class="hero-stat hsp">
+                <span class="hs-val">{totalItems}</span>
+                <span class="hs-lbl">Item Types</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+
+        <!-- Search -->
+        <div class="tb-search-wrap">
+            <span class="tb-search-icon">🔍</span>
+            <input class="tb-search" type="search"
+                placeholder="Search item code, color, karat…"
+                value={searchTerm} oninput={handleSearch} />
+            <template if:true={searchTerm}>
+                <button class="tb-clear-input" onclick={handleClearSearch} title="Clear search">✕</button>
+            </template>
+        </div>
+
+        <!-- Color filter -->
+        <div class={colorFilterClass}>
+            <select class="tb-select" value={filterColor} onchange={handleColorFilter}>
+                <option value="">All Colors</option>
+                <option value="Yellow Gold">Yellow Gold</option>
+                <option value="White Gold">White Gold</option>
+                <option value="Rose Gold">Rose Gold</option>
+                <option value="Silver">Silver</option>
+            </select>
+            <template if:true={filterColor}>
+                <button class="filter-clear-btn" onclick={handleClearColorFilter} title="Clear">✕</button>
+            </template>
+        </div>
+
+        <!-- Karat filter -->
+        <div class={karatFilterClass}>
+            <select class="tb-select" value={filterKarat} onchange={handleKaratFilter}>
+                <option value="">All Karats</option>
+                <template for:each={allKaratValues} for:item="k">
+                    <option key={k} value={k}>{k}</option>
+                </template>
+            </select>
+            <template if:true={filterKarat}>
+                <button class="filter-clear-btn" onclick={handleClearKaratFilter} title="Clear">✕</button>
+            </template>
+        </div>
+
+        <!-- Clear all filters -->
+        <template if:true={hasActiveFilters}>
+            <button class="btn-clear-all" onclick={handleClearAllFilters}>✕ Clear All</button>
+        </template>
+
+        <!-- Spacer -->
+        <div class="tb-spacer"></div>
+
+        <!-- Result count -->
+        <span class="tb-count">{filteredInventory.length} item(s)</span>
+
+        <!-- Refresh -->
+        <button class={refreshBtnClass} onclick={handleRefresh} title="Refresh stock">
+            <span class={refreshIconClass}>↻</span>
+        </button>
+
+        <!-- Add Stock -->
+        <template if:true={canAddStock}>
+            <button class="btn-add-stock" onclick={handleOpenModal}>＋ Add Stock</button>
+        </template>
+
+    </div>
+
+    <!-- STOCK TABLE (All Orders style) -->
+    <div class="stock-table-wrap">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Loading inventory…</div>
+        </template>
+        <template if:false={isLoading}>
+            <template if:true={hasItems}>
+
+                <!-- Table header -->
+                <div class="st-head">
+                    <div class="sth">Item Code</div>
+                    <div class="sth">Color</div>
+                    <div class="sth">Karat</div>
+                    <div class="sth">Size</div>
+                    <div class="sth sth-qty">Available Qty</div>
+                    <!-- <div class="sth">Status</div> -->
+                    <!-- <div class="sth">Meas. Type</div> -->
+                    <template if:true={canAddStock}>
+                        <div class="sth sth-action">Action</div>
+                    </template>
+                </div>
+
+                <!-- Table rows -->
+                <template for:each={filteredInventory} for:item="inv">
+                    <div key={inv.Id} class={inv.rowClass}>
+                        <div class="std std-code">{inv.Item_Code__c}</div>
+                        <div class="std">
+                            <template if:true={inv.Color__c}>
+                                <span class="tag tag-color">{inv.Color__c}</span>
+                            </template>
+                            <template if:false={inv.Color__c}>
+                                <span class="std-empty">—</span>
+                            </template>
+                        </div>
+                        <div class="std">
+                            <template if:true={inv.Karat__c}>
+                                <span class="tag tag-karat">{inv.Karat__c}</span>
+                            </template>
+                            <template if:false={inv.Karat__c}>
+                                <span class="std-empty">—</span>
+                            </template>
+                        </div>
+                        <div class="std">
+                            <span class="std-muted">{inv.sizeLabel}</span>
+                        </div>
+                        <div class="std std-qty">
+                        
+                            <!-- Quantity → Pieces -->
+                            <template if:true={inv.isQtyType}>
+                                <span class={inv.qtyClass}>{inv.Available_Qty__c}</span>
+                                <span class="std-pcs">pcs</span>
+                            </template>
+
+                            <!-- LengthWeight → Inches + Grams -->
+                            <template if:true={inv.isLWType}>
+                                <span class={inv.qtyClass}>{inv.Available_Inches__c}</span>
+                                <span class="std-pcs">in</span>
+                                <span class="std-sep"> · </span>
+                                <span class={inv.qtyClass}>{inv.Available_Grams__c}</span>
+                                <span class="std-pcs">g</span>
+                            </template>
+
+                            <!-- Pair → Pair only -->
+                            <template if:true={inv.isPairType}>
+                                <span class={inv.qtyClass}>{inv.Available_Pair__c}</span>
+                                <span class="std-pcs">Pair</span>
+                            </template>
+
+                            <!-- QuantityPair → Pieces + Pair -->
+                            <template if:true={inv.isQPType}>
+                                <span class={inv.qtyClass}>{inv.Available_Qty__c}</span>
+                                <span class="std-pcs">pcs</span>
+                                <span class="std-sep"> · </span>
+                                <span class={inv.qtyClass}>{inv.Available_Pair__c}</span>
+                                <span class="std-pcs">Pair</span>
+                            </template>
+
+                            <!-- QuantityWeight → Pieces + Grams -->
+                            <template if:true={inv.isQWType}>
+                                <span class={inv.qtyClass}>{inv.Available_Qty__c}</span>
+                                <span class="std-pcs">pcs</span>
+                                <span class="std-sep"> · </span>
+                                <span class={inv.qtyClass}>{inv.Available_Grams__c}</span>
+                                <span class="std-pcs">g</span>
+                            </template>
+                            <!-- Weight → Grams only -->
+                            <template if:true={inv.isWeightType}>
+                                <span class={inv.qtyClass}>{inv.Available_Grams__c}</span>
+                                <span class="std-pcs">g</span>
+                            </template>
+
+                            <!-- LengthQuantity → Inches + Pieces -->
+                            <template if:true={inv.isLQType}>
+                                <span class={inv.qtyClass}>{inv.Available_Inches__c}</span>
+                                <span class="std-pcs">in</span>
+
+                                <span class="std-sep"> · </span>
+
+                                <span class={inv.qtyClass}>{inv.Available_Qty__c}</span>
+                                <span class="std-pcs">pcs</span>
+                            </template>
+                            
+                        </div>
+                        <!-- <div class="std">
+                            <span class={inv.statusClass}>{inv.stockStatus}</span>
+                        </div> -->
+                        <!-- <div class="std">
+                            <span class="tag tag-meas">{inv.measurementType}</span>
+                        </div> -->
+                        <template if:true={canAddStock}>
+                            <button class="btn-edit-size"
+                                data-id={inv.Id}
+                                data-code={inv.Item_Code__c}
+                                data-color={inv.Color__c}
+                                data-karat={inv.Karat__c}
+                                data-size={inv.sizeLabel}
+                                data-mtype={inv.measurementType}
+                                data-qty={inv.Available_Qty__c}
+                                data-inches={inv.Available_Inches__c}
+                                data-grams={inv.Available_Grams__c}
+                                data-pair={inv.Available_Pair__c}
+                                onclick={handleOpenEditSize}
+                                title="Edit size">
+                                ✏️ Edit
+                            </button>
+                            <div class="std std-action">
+                                <button class="btn-clear-stock"
+                                    data-id={inv.Id}
+                                    data-code={inv.Item_Code__c}
+                                    onclick={handleClearStock}
+                                    title="Clear this stock">
+                                    🗑 Clear
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+            </template>
+            <template if:false={hasItems}>
+                <div class="empty-state">
+                    <div class="es-icon">📦</div>
+                    <div class="es-title">No inventory found</div>
+                    <div class="es-sub">
+                        <template if:true={hasActiveFilters}>Adjust or clear your filters</template>
+                        <template if:false={hasActiveFilters}>
+                            <template if:true={searchTerm}>No items match "{searchTerm}"</template>
+                            <template if:false={searchTerm}>No stock on hand. Add manually or complete a production batch.</template>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </template>
+    </div>
+    <!-- EDIT SIZE MODAL -->
+    <template if:true={showEditSizeModal}>
+        <div class="modal-backdrop" onclick={handleCloseEditSize}></div>
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <div class="modal-title">✏️ Edit Size</div>
+                <button class="modal-close" onclick={handleCloseEditSize}>✕</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Read-only fields -->
+                <div class="mf-group">
+                    <label class="mf-lbl">Item Code</label>
+                    <div class="mf-readonly mf-readonly-val">{es_itemCode}</div>
+                </div>
+                <div class="mf-group">
+                    <label class="mf-lbl">Color</label>
+                    <div class="mf-readonly mf-readonly-val">{es_color}</div>
+                </div>
+                <div class="mf-group">
+                    <label class="mf-lbl">Karat</label>
+                    <div class="mf-readonly mf-readonly-val">{es_karat}</div>
+                </div>
+                <div class="mf-group">
+                    <label class="mf-lbl">Measurement Type</label>
+                    <div class="mf-readonly mf-readonly-val">{es_measurementType}</div>
+                </div>
+                <div class="mf-group">
+                    <label class="mf-lbl">Available Qty</label>
+                    <div class="mf-readonly mf-readonly-val">{es_qtyDisplay}</div>
+                </div>
+
+                <!-- Only editable field -->
+                <div class="mf-group">
+                    <label class="mf-lbl">
+                        Size
+                        <span class="tag tag-edit-only">✏️ editable</span>
+                    </label>
+                    <input class="mf-input mf-input-highlight"
+                        type="text"
+                        placeholder="e.g. 5.0 mm, 21.0 mm"
+                        value={es_size}
+                        oninput={handleEsSizeInput} />
+                    <div class="mf-hint">Format: <strong>5.0 mm</strong> — number + space + mm</div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick={handleCloseEditSize}>Cancel</button>
+                <button class="btn-save" onclick={handleSaveEditSize} disabled={isEditSaving}>
+                    <template if:false={isEditSaving}>💾 Save Size</template>
+                    <template if:true={isEditSizing}>Saving…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+    <!-- CONFIRM CLEAR MODAL -->
+    <template if:true={showClearConfirm}>
+        <div class="modal-backdrop" onclick={handleCancelClear}></div>
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <div class="modal-title">🗑 Clear Stock</div>
+                <button class="modal-close" onclick={handleCancelClear}>✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-msg">
+                    Are you sure you want to clear all stock for
+                    <strong>{clearTargetCode}</strong>?
+                    This will delete the inventory record permanently.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick={handleCancelClear}>Cancel</button>
+                <button class="btn-danger" onclick={handleConfirmClear} disabled={isClearing}>
+                    <template if:false={isClearing}>🗑 Yes, Clear Stock</template>
+                    <template if:true={isClearing}>Clearing…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ADD STOCK MODAL -->
+    <template if:true={showModal}>
+        <div class="modal-backdrop" onclick={handleCloseModal}></div>
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">➕ Add Stock Manually</div>
+                <button class="modal-close" onclick={handleCloseModal}>✕</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Item Code picklist -->
+                <!-- <div class="mf-group">
+                    <label class="mf-lbl">Item Code <span class="req">*</span></label>
+                    <div class="pick-wrap">
+                        <div class="pick-trigger" onclick={handleItemPickFocus}>
+                            <span class={f_itemCodeClass}>{f_itemCodeLabel}</span>
+                            <span class="pick-chev">▾</span>
+                        </div>
+                        <template if:true={f_showItemPick}>
+                            <div class="pick-dropdown" onclick={handleDropdownClick}>
+                                <input class="pick-search" type="text"
+                                    placeholder="Search item code…"
+                                    value={f_itemPickSearch}
+                                    oninput={handleItemPickSearch} />
+                                <div class="pick-list">
+                                    <template if:true={f_hasItemOptions}>
+                                        <template for:each={f_filteredItems} for:item="opt">
+                                            <div key={opt} class="pick-option"
+                                                 onmousedown={handleItemCodeSelect}
+                                                 data-value={opt}>{opt}</div>
+                                        </template>
+                                    </template>
+                                    <template if:false={f_hasItemOptions}>
+                                        <div class="pick-empty">No matches</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div> -->
+                <!-- Category filter -->
+                <div class="mf-group">
+                    <label class="mf-lbl">Category</label>
+                    <div class="pick-wrap">
+                        <div class="pick-trigger cat-trigger" onclick={handleCatPickFocus}>
+                            <span class={f_catClass}>{f_catLabel}</span>
+                            <span class="pick-chev">▾</span>
+                        </div>
+                        <template if:true={f_showCatPick}>
+                            <div class="pick-dropdown" onclick={handleDropdownClick}>
+                                <input class="pick-search" type="text"
+                                    placeholder="Search category…"
+                                    value={f_catSearch}
+                                    oninput={handleCatSearch} />
+                                <div class="pick-list">
+                                    <template if:true={hasCatOptions}>
+                                        <template for:each={filteredCatOptions} for:item="cat">
+                                            <div key={cat} class="pick-option"
+                                                onmousedown={handleCategorySelect}
+                                                data-value={cat}>{cat}</div>
+                                        </template>
+                                    </template>
+                                    <template if:false={hasCatOptions}>
+                                        <div class="pick-empty">No categories</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Item Code picklist — filtered by category -->
+                <div class="mf-group">
+                    <label class="mf-lbl">Item Code <span class="req">*</span></label>
+                    <div class="pick-wrap">
+                        <div class="pick-trigger" onclick={handleItemPickFocus}>
+                            <span class={f_itemCodeClass}>{f_itemCodeLabel}</span>
+                            <span class="pick-chev">▾</span>
+                        </div>
+                        <template if:true={f_showItemPick}>
+                            <div class="pick-dropdown" onclick={handleDropdownClick}>
+                                <input class="pick-search" type="text"
+                                    placeholder="Search item code…"
+                                    value={f_itemPickSearch}
+                                    oninput={handleItemPickSearch} />
+                                <div class="pick-list">
+                                    <template if:true={f_hasItemOptions}>
+                                        <template for:each={f_filteredItems} for:item="opt">
+                                            <div key={opt} class="pick-option"
+                                                onmousedown={handleItemCodeSelect}
+                                                data-value={opt}>{opt}</div>
+                                        </template>
+                                    </template>
+                                    <template if:false={f_hasItemOptions}>
+                                        <div class="pick-empty">
+                                            <template if:false={f_category}>Select a category first</template>
+                                            <template if:true={f_category}>No matches</template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Color -->
+                <div class="mf-group">
+                    <label class="mf-lbl">Color <span class="req">*</span></label>
+                    <select class="mf-input" value={f_color} onchange={handleColorChange}>
+                        <option value="Yellow Gold">Yellow Gold</option>
+                        <option value="White Gold">White Gold</option>
+                        <option value="Rose Gold">Rose Gold</option>
+                        <option value="Silver">Silver</option>
+                    </select>
+                </div>
+
+                <!-- Karat -->
+                <div class="mf-group">
+                    <label class="mf-lbl">Karat <span class="req">*</span></label>
+                    <select class="mf-input" value={f_karat} onchange={handleKaratChange}>
+                        <option value="">Select karat…</option>
+                        <template for:each={allKaratValues} for:item="k">
+                            <option key={k} value={k}>{k}</option>
+                        </template>
+                    </select>
+                </div>
+
+                <div class="mf-group">
+                    <label class="mf-lbl">Measurement Type</label>
+                    <div class="mf-readonly">{f_measurementType}</div>
+                </div>
+
+                <!-- Qty
+                <div class="mf-group">
+                    <label class="mf-lbl">Qty to Add <span class="req">*</span></label>
+                    <input class="mf-input" type="number"
+                        placeholder="e.g. 50"
+                        value={f_qty}
+                        oninput={handleQtyInput}
+                        min="1" />
+                </div> -->
+                    <!-- Weight → Grams only -->
+                        <template if:true={f_isWeight}>
+                            <div class="mf-group">
+                                <label class="mf-lbl">Grams <span class="req">*</span></label>
+                                <input class="mf-input"
+                                    type="number"
+                                    placeholder="e.g. 85.320"
+                                    value={f_grams}
+                                    oninput={handleGramsInput}
+                                    min="0"
+                                    step="0.001" />
+                            </div>
+                        </template>
+
+                        <!-- LengthQuantity → Inches + Pieces -->
+                        <template if:true={f_isLQ}>
+                            <div class="mf-group">
+                                <label class="mf-lbl">Inches <span class="req">*</span></label>
+                                <input class="mf-input"
+                                    type="number"
+                                    placeholder="e.g. 12.50"
+                                    value={f_inches}
+                                    oninput={handleInchesInput}
+                                    min="0"
+                                    step="0.01" />
+                            </div>
+
+                            <div class="mf-group">
+                                <label class="mf-lbl">Pieces <span class="req">*</span></label>
+                                <input class="mf-input"
+                                    type="number"
+                                    placeholder="e.g. 10"
+                                    value={f_qty}
+                                    oninput={handleQtyInput}
+                                    min="0" />
+                            </div>
+                        </template>
+                <!-- Quantity → Pieces only -->
+<template if:true={f_isQty}>
+    <div class="mf-group">
+        <label class="mf-lbl">Qty to Add <span class="req">*</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 50"
+            value={f_qty} oninput={handleQtyInput} min="1" />
+    </div>
+</template>
+
+<!-- LengthWeight → Inches + Grams -->
+<template if:true={f_isLW}>
+    <div class="mf-group">
+        <label class="mf-lbl">Inches <span class="req">*</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 12.50"
+            value={f_inches} oninput={handleInchesInput} min="0" step="0.01" />
+    </div>
+    <div class="mf-group">
+        <label class="mf-lbl">Grams <span class="req">*</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 85.320"
+            value={f_grams} oninput={handleGramsInput} min="0" step="0.001" />
+    </div>
+</template>
+
+<!-- Pair → Pair only -->
+<template if:true={f_isPair}>
+    <div class="mf-group">
+        <label class="mf-lbl">Pair Qty <span class="req">*</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 10"
+            value={f_pair} oninput={handlePairInput} min="1" />
+    </div>
+</template>
+
+<!-- QuantityPair → Pieces + Pair -->
+<template if:true={f_isQP}>
+    <div class="mf-group">
+        <label class="mf-lbl">Pieces</label>
+        <input class="mf-input" type="number" placeholder="e.g. 50"
+            value={f_qty} oninput={handleQtyInput} min="0" />
+    </div>
+    <div class="mf-group">
+        <label class="mf-lbl">Pair</label>
+        <input class="mf-input" type="number" placeholder="e.g. 10"
+            value={f_pair} oninput={handlePairInput} min="0" />
+    </div>
+</template>
+
+<!-- QuantityWeight → Pieces + Grams -->
+<template if:true={f_isQW}>
+    <div class="mf-group">
+        <label class="mf-lbl">Qty to Add <span class="req">*</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 50"
+            value={f_qty} oninput={handleQtyInput} min="1" />
+    </div>
+    <div class="mf-group">
+        <label class="mf-lbl">Grams <span class="opt">(optional)</span></label>
+        <input class="mf-input" type="number" placeholder="e.g. 85.320"
+            value={f_grams} oninput={handleGramsInput} min="0" step="0.001" />
+    </div>
+</template>
+
+                <!-- Size -->
+                <!-- Size -->
+<div class="mf-group">
+    <label class="mf-lbl">
+        Size <span class="opt">(optional)</span>
+        <template if:true={f_sizeIsAuto}>
+            <span class="tag tag-auto" title="Auto-filled from item code">⚡ auto</span>
+        </template>
+    </label>
+    <input class="mf-input"
+        type="text"
+        placeholder="e.g. 5.0 mm, 21.0 mm"
+        value={f_size}
+        oninput={handleSizeInput}
+        onblur={handleSizeBlur}
+        readonly={f_sizeIsAuto} />
+    <template if:true={f_sizeIsAuto}>
+        <div class="mf-hint">Size auto-filled from item code. Select a different item to change.</div>
+    </template>
+</div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick={handleCloseModal}>Cancel</button>
+                <button class="btn-save" onclick={handleSaveStock} disabled={isSaving}>
+                    <template if:false={isSaving}>✅ Add Stock</template>
+                    <template if:true={isSaving}>Saving…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</div>
+</template>

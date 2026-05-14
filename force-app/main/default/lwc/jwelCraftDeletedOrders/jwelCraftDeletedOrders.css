@@ -1,0 +1,236 @@
+.deleted-page {
+    min-height: 100%;
+    background: #faf5e8;
+    padding: 24px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.hero {
+    background: linear-gradient(135deg, #fffef9, #fef3c7);
+    border: 1px solid #e4d5b0;
+    border-radius: 18px;
+    padding: 22px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 28px rgba(28, 20, 8, 0.08);
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #b8860b;
+    font-weight: 800;
+}
+
+.title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: #1c1408;
+}
+
+.sub {
+    font-size: 13px;
+    color: #8a7050;
+}
+
+.refresh-btn {
+    border: none;
+    background: #d4a017;
+    color: #1c1408;
+    font-weight: 800;
+    padding: 11px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.table-card {
+    background: #fffef9;
+    border: 1px solid #e4d5b0;
+    border-radius: 18px;
+    overflow: auto;
+    box-shadow: 0 10px 30px rgba(28, 20, 8, 0.08);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #1c1408;
+    color: #f0c040;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 13px 16px;
+}
+
+td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #ede0c0;
+    font-size: 13px;
+    color: #2e2010;
+}
+
+.customer {
+    font-weight: 800;
+}
+
+.small {
+    font-size: 11px;
+    color: #8a7050;
+    margin-top: 2px;
+}
+
+.code {
+    background: #fef3c7;
+    color: #7a5200;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.color-pill {
+    background: #fff7ed;
+    color: #b45309;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.karat {
+    background: #edf7f1;
+    color: #1e6b3c;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.qty {
+    font-weight: 900;
+    font-size: 15px;
+}
+
+.loading,
+.empty {
+    padding: 50px;
+    text-align: center;
+    background: #fffef9;
+    border: 1px solid #e4d5b0;
+    border-radius: 18px;
+    color: #8a7050;
+}
+
+.empty-icon {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.empty-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1c1408;
+}
+
+.empty-sub {
+    font-size: 13px;
+    margin-top: 5px;
+}
+.modal-back {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9998;
+}
+
+.confirm-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fffef9;
+    padding: 24px;
+    border-radius: 16px;
+    z-index: 9999;
+    width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.delete-btn {
+    border: none;
+    background: #c43030;
+    color: white;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.delete-btn:hover {
+    background: #9e2020;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.danger {
+    background: #c43030;
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.cancel {
+    background: #eee;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #fffef9;
+    border: 1px solid #e4d5b0;
+    border-radius: 14px;
+    padding: 14px;
+    margin: 16px 0;
+}
+
+.filter-input,
+.filter-select {
+    min-width: 180px;
+    padding: 10px 12px;
+    border: 1.5px solid #e4d5b0;
+    border-radius: 10px;
+    background: #faf5e8;
+    font-size: 13px;
+    outline: none;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    border-color: #d4a017;
+}
+
+.clear-btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #1c1408;
+    color: #f0c040;
+    font-weight: 700;
+    cursor: pointer;
+}

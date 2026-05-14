@@ -1,0 +1,111 @@
+<template>
+     <div class="overrideStyle"></div>
+    <div class="login-bg">
+
+        <!-- Floating decorative gems -->
+        <div class="gem-float g1">💎</div>
+        <div class="gem-float g2">💍</div>
+        <div class="gem-float g3">✨</div>
+        <div class="gem-float g4">💎</div>
+        <div class="gem-float g5">⭐</div>
+
+        <div class="login-wrap">
+
+            <!-- Brand Panel (left) -->
+            <div class="brand-panel">
+                <div class="bp-inner">
+                    <!-- <div class="bp-gem">💎</div> -->
+                    <div class="tb-gem">
+                        <img src={gemIcon} alt="Gem Icon" class="gem-icon" style="width: 71%;"/>
+                    </div>
+                    <div class="bp-name">Shree Ganesh</div>
+                    <div class="bp-tagline">Order Management System</div>
+                    <div class="bp-divider"></div>
+                    <div class="bp-desc">
+                        Manage your jewelry orders from creation to dispatch — all in one place.
+                    </div>
+                    <div class="bp-features">
+                        <div class="bp-feat"><span class="bp-feat-icon">📋</span>Order Tracking</div>
+                        <div class="bp-feat"><span class="bp-feat-icon">🏭</span>Bag Generate</div>
+                        <div class="bp-feat"><span class="bp-feat-icon">🚚</span>Dispatch Management</div>
+                        <div class="bp-feat"><span class="bp-feat-icon">📦</span>Inventory Bucket</div>
+                    </div>
+                    <div class="bp-footer">
+                        Crafted with precision · Managed with care
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Card (right) -->
+            <div class={formClass}>
+                <div class="lc-header">
+                    <div class="lc-title">Welcome Back</div>
+                    <div class="lc-sub">Sign in to your JwelCraft account</div>
+                </div>
+
+                <div class="lc-body">
+
+                    <!-- Error banner -->
+                    <template if:true={hasError}>
+                        <div class="error-banner">
+                            <span class="err-icon">⚠️</span>
+                            <span>{errorMsg}</span>
+                        </div>
+                    </template>
+
+                    <!-- Login ID -->
+                    <div class="field-group">
+                        <label class="field-label">Login ID</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">👤</span>
+                            <input
+                                class="lc-input"
+                                type="text"
+                                placeholder="Enter your login ID"
+                                value={loginId}
+                                onchange={handleLoginId}
+                                onkeydown={handleKeyDown}
+                                autocomplete="username"
+                                disabled={isLoading}>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="field-group">
+                        <label class="field-label">Password</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input
+                                class="lc-input lc-input-pass"
+                                type={inputType}
+                                placeholder="Enter your password"
+                                value={password}
+                                onchange={handlePassword}
+                                onkeydown={handleKeyDown}
+                                autocomplete="current-password"
+                                disabled={isLoading}>
+                            <button class="eye-btn" onclick={toggleShowPass} title="Toggle password visibility">
+                                {eyeIcon}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button class="btn-login" onclick={handleLogin} disabled={isLoading}>
+                        <template if:true={isLoading}>
+                            <span class="spinner"></span> Signing in…
+                        </template>
+                        <template if:false={isLoading}>
+                            🔑 &nbsp; Sign In
+                        </template>
+                    </button>
+
+                    <div class="lc-hint">
+                        Contact your administrator if you don't have login credentials.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</template>

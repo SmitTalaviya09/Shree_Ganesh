@@ -1,0 +1,744 @@
+<template>
+    <div class="overrideStyle"></div>
+<div class="portal-wrap" onclick={handleGlobalClick}>
+
+    <!-- TOAST -->
+    <template if:true={showToast}>
+        <div class={toastClass}>
+            <span class="toast-msg">{toastMsg}</span>
+            <button class="toast-close" onclick={handleCloseToast}>✕</button>
+        </div>
+    </template>
+
+    <!-- ════ LOGIN ════ -->
+    <template if:true={isLoginScreen}>
+        <div class="login-page">
+            <div class="login-card">
+                <div class="brand-logo">
+                    <!-- <div class="brand-gem">◆</div> -->
+                    <div class="brand-gem">
+                        <img src={gemIcon} alt="Gem Icon" class="gem-icon" style="width: 35%;"/>
+                    </div>
+                    <div class="brand-name">Shree Ganesh Finding</div>
+                    <div class="brand-sub">Client Order Portal</div>
+                </div>
+                <div class="login-form">
+                    <div class="lf-group">
+                        <label class="lf-lbl">GST Number <span class="req">*</span></label>
+                        <input class="lf-input" type="text" placeholder="Enter your GST number"
+                            value={loginGst} oninput={handleGstInput} />
+                    </div>
+                    <div class="lf-group">
+                        <label class="lf-lbl">Mobile Number <span class="req">*</span></label>
+                        <input class="lf-input" type="text" placeholder="Enter your registered mobile"
+                            value={loginMobile} oninput={handleMobileInput} />
+                    </div>
+                    <template if:true={loginError}>
+                        <div class="login-error">{loginError}</div>
+                    </template>
+                    <button class="btn-verify" onclick={handleVerify} disabled={isVerifying}>
+                        {verifyBtnLabel}
+                    </button>
+                </div>
+                <div class="login-footer">
+                    Not registered? Contact <strong>Shree Ganesh Finding</strong> to get access.
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ════ APP ════ -->
+    <template if:true={isAppScreen}>
+        <div class="app-page">
+
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <!-- <div class="tb-gem">◆</div> -->
+                    <div class="tb-gem">
+                        <img src={gemIcon} alt="Gem Icon" class="gem-icon" style="height: 40px;filter: drop-shadow(0 0 10px #f0c040);"/>
+                    </div>
+                    <div>
+                        <div class="tb-title">Shree Ganesh Finding</div>
+                        <div class="tb-sub">Client Portal</div>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <div class="client-chip">👤 {clientName}</div>
+                    <!-- ★ NEW — Catalogue download button ★ -->
+                    <button class="btn-catalogue" onclick={handleDownloadCatalogue}
+                            title="Download Product Catalogue">
+                        📄 Catalogue
+                    </button>
+                    <button class="btn-logout" onclick={handleLogout}>Logout</button>
+                </div>
+            </div>
+
+            <div class="tab-bar">
+                <button class={tabOrderClass}    onclick={handleTabOrder}>🛒 Place Order</button>
+                <button class={tabMyOrdersClass} onclick={handleTabMyOrders}>📋 My Orders</button>
+            </div>
+
+            <!-- ══ PLACE ORDER TAB ══ -->
+            <template if:true={isTabOrder}>
+
+                <!-- ─── CONFIRMATION (after backend save) ─── -->
+                <template if:true={showConfirmation}>
+                    <div class="confirm-page">
+                        <div class="confirm-card">
+                            <span class="confirm-icon">✅</span>
+                            <div class="confirm-title">Orders Placed!</div>
+                            <div class="confirm-sub">
+                                Thank you, <strong>{clientName}</strong>. Your orders are
+                                <strong>pending review</strong> by our team.
+                                Track them in <em>My Orders</em>.
+                            </div>
+                            <!-- <div class="order-ids-table">
+                                <div class="oi-head">
+                                    <div class="oih">Order ID</div>
+                                    <div class="oih">Status</div>
+                                </div>
+                                <template for:each={confirmedOrders} for:item="oid">
+                                    <div key={oid} class="oi-row">
+                                        <div class="oi-id">{oid}</div>
+                                        <div class="oi-status">
+                                            <span class="status-badge status-pending">Pending Review</span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div> -->
+                            <div class="order-ids-table">
+                                <div class="oi-head">
+                                    <div class="oih">#</div>
+                                    <div class="oih">Item Code</div>
+                                    <div class="oih">Quantity</div>
+                                    <div class="oih">Unit</div>
+                                    <div class="oih">Status</div>
+                                </div>
+                                <template for:each={confirmedOrders} for:item="ord">
+                                    <div key={ord.itemCode} class="oi-row">
+                                        <div class="oi-id">{ord.num}</div>
+                                        <div class="oi-id">{ord.itemCode}</div>
+                                        <div class="oi-id">{ord.quantity}</div>
+                                        <div class="oi-id">{ord.unit}</div>
+                                        <div class="oi-status">
+                                            <span class="status-badge status-pending">Pending Review</span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="confirm-note">
+                                📌 You can track your orders in the ‘My Orders’ tab, where accepted orders will be displayed.
+                            </div>
+                            <div class="confirm-btns">
+                                <button class="btn-download"    onclick={handleDownloadPdf}>⬇ Download Confirmation</button>
+                                <button class="btn-view-orders" onclick={handleViewMyOrders}>📋 View My Orders</button>
+                                <button class="btn-new-order"   onclick={handlePlaceAnother}>＋ Place Another Order</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ─── PREVIEW SCREEN (before backend save) ─── -->
+                <template if:true={showPreview}>
+                    <div class="preview-page">
+                        <div class="preview-card">
+
+                            <!-- Header -->
+                            <div class="preview-header">
+                                <div class="preview-header-left">
+                                    <div class="preview-icon-wrap">🔍</div>
+                                    <div>
+                                        <div class="preview-title">Review Your Order</div>
+                                        <div class="preview-sub">Check all details carefully before confirming</div>
+                                    </div>
+                                </div>
+                                <div class="preview-badge">{orderLines.length} Line(s)</div>
+                            </div>
+
+                            <!-- Client info strip -->
+                            <div class="preview-client-strip">
+                                <div class="pcs-field">
+                                    <span class="pcs-lbl">Client</span>
+                                    <span class="pcs-val">{clientName}</span>
+                                </div>
+                                <div class="pcs-sep"></div>
+                                <div class="pcs-field">
+                                    <span class="pcs-lbl">GST</span>
+                                    <span class="pcs-val">{clientGst}</span>
+                                </div>
+                                <div class="pcs-sep"></div>
+                                <div class="pcs-field">
+                                    <span class="pcs-lbl">Total Qty</span>
+                                    <span class="pcs-val pcs-qty">{totalQty}</span>
+                                </div>
+                            </div>
+
+                            <!-- Desktop table -->
+                            <div class="pv-table-wrap">
+                                <table class="pv-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="c">#</th>
+                                            <th>Item Code</th>
+                                            <th>Color</th>
+                                            <th>Karat</th>
+                                            <th>Size</th>
+                                            <th class="r">Quantity</th>
+                                            <th>Unit</th>
+                                            <!-- <th>Priority</th>
+                                            <th>Due Date</th> -->
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={orderLines} for:item="l">
+                                            <tr key={l.id}>
+                                                <td class="pv-sr c">{l.num}</td>
+                                                <td class="pv-item">{l.itemCode}</td>
+                                                <td>
+                                                    <span class="pv-color-pill" data-color={l.color}>
+                                                        <span class="pv-color-dot" data-color={l.color}></span>
+                                                        {l.color}
+                                                    </span>
+                                                </td>
+                                                <td><span class="pv-karat-badge">{l.karat}</span></td>
+                                                <td class="pv-muted">{l.sizeDisplay}</td>
+                                                <td class="pv-qty r">{l.quantity}</td>
+                                                <td><span class="pv-unit-badge">{l.qtyUnit}</span></td>
+                                                <!-- <td><span class={l.priorityClass}>{l.priority}</span></td>
+                                                <td class="pv-muted">{l.dueDateDisplay}</td> -->
+                                                <td class="pv-muted">{l.remarkDisplay}</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Mobile cards -->
+                            <div class="pv-cards">
+                                <template for:each={orderLines} for:item="l">
+                                    <div key={l.id} class="pv-card">
+                                        <div class="pv-card-head">
+                                            <span class="pv-card-num">#{l.num}</span>
+                                            <span class="pv-card-item">{l.itemCode}</span>
+                                            <!-- <span class={l.priorityClass}>{l.priority}</span> -->
+                                        </div>
+                                        <div class="pv-card-body">
+                                            <div class="pv-field">
+                                                <span class="pv-lbl">Color</span>
+                                                <span class="pv-color-pill" data-color={l.color}>
+                                                    <span class="pv-color-dot" data-color={l.color}></span>
+                                                    {l.color}
+                                                </span>
+                                            </div>
+                                            <div class="pv-field">
+                                                <span class="pv-lbl">Karat</span>
+                                                <span class="pv-karat-badge">{l.karat}</span>
+                                            </div>
+                                            <div class="pv-field">
+                                                <span class="pv-lbl">Qty</span>
+                                                <span class="pv-qty">{l.quantity} {l.qtyUnit}</span>
+                                            </div>
+                                            <div class="pv-field">
+                                                <span class="pv-lbl">Size</span>
+                                                <span>{l.sizeDisplay}</span>
+                                            </div>
+                                            <!-- <div class="pv-field">
+                                                <span class="pv-lbl">Due Date</span>
+                                                <span>{l.dueDateDisplay}</span>
+                                            </div> -->
+                                            <template if:true={l.remark}>
+                                                <div class="pv-field pv-field-full">
+                                                    <span class="pv-lbl">Remark</span>
+                                                    <span>{l.remark}</span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="preview-actions">
+                                <button class="btn-preview-back" onclick={handlePreviewBack}>
+                                    ← Edit Order
+                                </button>
+                                <button class="btn-preview-confirm" onclick={handleConfirmOrder}
+                                        disabled={isSubmitting}>
+                                    <template if:false={isSubmitting}>✅ Confirm &amp; Place Order</template>
+                                    <template if:true={isSubmitting}>Placing Orders…</template>
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ─── ORDER ENTRY FORM ─── -->
+                <template if:false={showPreviewOrConfirm}>
+                    <div class="order-card">
+                        <div class="oc-header">
+                            <div>
+                                <div class="oc-title">New Order</div>
+                                <div class="oc-sub">All * fields are required</div>
+                            </div>
+                            <template if:true={hasLines}>
+                                <div class="oc-badge">{orderLines.length} line(s)</div>
+                            </template>
+                        </div>
+
+                        <!-- Desktop column headers -->
+                        <div class="ol-head">
+                            <div class="olh">#</div>
+                            <div class="olh">Item Code *</div>
+                            <div class="olh">Size</div>
+                            <div class="olh">Color *</div>
+                            <div class="olh">Karat *</div>
+                            <div class="olh">Qty *</div>
+                            <!-- <div class="olh">Priority</div> -->
+                            <!-- <div class="olh">Due Date</div> -->
+                            <div class="olh">Remark</div>
+                            <div class="olh"></div>
+                        </div>
+
+                        <template for:each={orderLines} for:item="line">
+                            <div key={line.id} class="ol-row">
+                                <div class="ol-num">{line.num}</div>
+
+                                <!-- Item Code -->
+                                <!-- <div class="ol-cell">
+                                    <div class="label-mob">Item Code *</div>
+                                    <div class="pick-wrap">
+                                        <div class={line.itemTriggerClass}
+                                             onclick={handlePickFocus} data-id={line.id}>
+                                            <span class={line.itemClass}>{line.itemLabel}</span>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <template if:true={line.showPick}>
+                                            <div class="pick-drop" onclick={handleDropdownClick}>
+                                                <input class="pick-search" type="text"
+                                                    placeholder="Search…" value={line.pickSearch}
+                                                    oninput={handlePickSearch} data-id={line.id} />
+                                                <div class="pick-list">
+                                                    <template if:true={line.hasItems}>
+                                                        <template for:each={line.filteredItems} for:item="opt">
+                                                            <div key={opt} class="pick-opt"
+                                                                 onmousedown={handleItemSelect}
+                                                                 data-id={line.id} data-value={opt}>{opt}</div>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={line.hasItems}>
+                                                        <div class="pick-empty">No matches</div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div> -->
+                                <!-- Item Code -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Item Code *</div>
+
+                                    <!-- ── CATEGORY PICKER (NEW) ── -->
+                                    <div class="pick-wrap cat-pick-wrap">
+                                        <div class={line.catTriggerClass}
+                                            onclick={handleCatPickOpen}
+                                            data-id={line.id}>
+                                            <span class={line.catClass}>{line.catLabel}</span>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <template if:true={line.showCatPick}>
+                                            <div class="pick-drop" onclick={handleDropdownClick}>
+                                                <input class="pick-search" type="text"
+                                                    placeholder="Search category…"
+                                                    value={line.catSearch}
+                                                    oninput={handleCatSearch}
+                                                    data-id={line.id} />
+                                                <div class="pick-list">
+                                                    <template if:true={line.hasCatOptions}>
+                                                        <template for:each={line.filteredCatOptions} for:item="cat">
+                                                            <div key={cat} class="pick-opt"
+                                                                onmousedown={handleCatSelect}
+                                                                data-id={line.id}
+                                                                data-value={cat}>{cat}</div>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={line.hasCatOptions}>
+                                                        <div class="pick-empty">No matches</div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- ── ITEM CODE PICKER (unchanged style) ── -->
+                                    <div class="pick-wrap" style="margin-top:4px">
+                                        <div class={line.itemTriggerClass}
+                                            onclick={handlePickFocus} data-id={line.id}>
+                                            <span class={line.itemClass}>{line.itemLabel}</span>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <template if:true={line.showPick}>
+                                            <div class="pick-drop" onclick={handleDropdownClick}>
+                                                <input class="pick-search" type="text"
+                                                    placeholder="Search…" value={line.pickSearch}
+                                                    oninput={handlePickSearch} data-id={line.id} />
+                                                <div class="pick-list">
+                                                    <template if:true={line.hasItems}>
+                                                        <template for:each={line.filteredItems} for:item="opt">
+                                                            <div key={opt} class="pick-opt"
+                                                                onmousedown={handleItemSelect}
+                                                                data-id={line.id} data-value={opt}>{opt}</div>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={line.hasItems}>
+                                                        <div class="pick-empty">
+                                                            <template if:false={line.category}>Pick a category first</template>
+                                                            <template if:true={line.category}>No matches</template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                 <!-- Size -->
+                                <!-- <div class="ol-cell">
+                                    <div class="label-mob">Size</div>
+                                    <div class="size-inp-wrap">
+                                            <input class={line.sizeInputClass}
+                                                type="text"
+                                                placeholder="—"
+                                                value={line.size}
+                                                data-id={line.id}
+                                                data-field="size"
+                                                oninput={handleSizeTyping}
+                                                onchange={handleSizeCommit}
+                                                readonly={line.sizeIsAuto} />
+                                        <template if:true={line.sizeIsAuto}>
+                                            <span class="size-auto-tag" title="Auto from item config">⚙</span>
+                                        </template>
+                                    </div>
+                                </div> -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Size</div>
+                                    <div class="size-inp-wrap">
+
+                                        <template if:true={line.hasSizeOptions}>
+                                            <select class={line.sizeInputClass}
+                                                    value={line.size}
+                                                    data-id={line.id}
+                                                    data-field="size"
+                                                    onchange={handleSizeCommit}>
+                                                <option value="">Select size…</option>
+                                                <template for:each={line.sizeOptions} for:item="s">
+                                                    <option key={s.value} value={s.value} selected={s.selected}>{s.label}</option>
+                                                </template>
+                                            </select>
+                                        </template>
+
+                                        <template if:false={line.hasSizeOptions}>
+                                            <input class={line.sizeInputClass}
+                                                type="text"
+                                                placeholder="—"
+                                                value={line.size}
+                                                data-id={line.id}
+                                                data-field="size"
+                                                oninput={handleSizeTyping}
+                                                onchange={handleSizeCommit}
+                                                readonly={line.sizeIsAuto} />
+                                        </template>
+
+                                        <template if:true={line.sizeIsAuto}>
+                                            <span class="size-auto-tag" title="Auto from item config">⚙</span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <!-- Color — custom picklist -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Color *</div>
+                                    <div class="pick-wrap">
+                                        <div class={line.colorTriggerClass}
+                                             onclick={handleColorPickOpen} data-id={line.id}>
+                                            <template if:true={line.color}>
+                                                <span class="pick-color-dot" data-color={line.color}></span>
+                                                <span class="pick-selected">{line.color}</span>
+                                            </template>
+                                            <template if:false={line.color}>
+                                                <span class="pick-placeholder">Color…</span>
+                                            </template>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <template if:true={line.showColorPick}>
+                                            <div class="pick-drop pick-drop-color" onclick={handleDropdownClick}>
+                                                <template for:each={colorOptions} for:item="c">
+                                                    <div key={c.value} class="color-opt"
+                                                         onmousedown={handleColorSelect}
+                                                         data-id={line.id} data-value={c.value}>
+                                                        <span class="color-swatch" style={c.swatchStyle}></span>
+                                                        <span class="color-opt-label">{c.label}</span>
+                                                        <template if:true={c.selected}>
+                                                            <span class="color-check">✓</span>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <template if:true={line.colorError}>
+                                        <div class="field-err">Required</div>
+                                    </template>
+                                </div>
+
+                                <!-- Karat — custom picklist -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Karat *</div>
+                                    <div class="pick-wrap">
+                                        <div class={line.karatTriggerClass}
+                                             onclick={handleKaratPickOpen} data-id={line.id}>
+                                            <template if:true={line.karat}>
+                                                <span class="karat-pill">{line.karat}</span>
+                                            </template>
+                                            <template if:false={line.karat}>
+                                                <span class="pick-placeholder">Karat…</span>
+                                            </template>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <template if:true={line.showKaratPick}>
+                                            <div class="pick-drop pick-drop-karat" onclick={handleDropdownClick}>
+                                                <div class="karat-grid">
+                                                    <template for:each={allKaratValues} for:item="k">
+                                                        <div key={k} class="karat-opt"
+                                                             onmousedown={handleKaratSelect}
+                                                             data-id={line.id} data-value={k}>
+                                                            <span class="karat-opt-pill">{k}</span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <template if:true={line.karatError}>
+                                        <div class="field-err">Required</div>
+                                    </template>
+                                </div>
+
+                               
+
+                                <!-- Qty -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Qty *</div>
+                                    <div class="qty-wrap">
+                                        <template if:true={line.itemCode}>
+                                            <select class="inp inp-unit"
+                                                    data-id={line.id} data-field="qtyUnit"
+                                                    value={line.qtyUnit} onchange={handleLineChange}>
+                                                <template for:each={line.qtyUnitOptions} for:item="u">
+                                                    <option key={u.value} value={u.value}>{u.label}</option>
+                                                </template>
+                                            </select>
+                                        </template>
+                                        <template if:false={line.itemCode}>
+                                            <select class="inp inp-unit" disabled><option>—</option></select>
+                                        </template>
+                                        <input class={line.qtyInputClass}
+                                            type="number" placeholder="0" value={line.quantity}
+                                            data-id={line.id} data-field="quantity"
+                                            min="0" step={line.qtyStep} onchange={handleLineChange} />
+                                    </div>
+                                    <template if:true={line.qtyError}>
+                                        <div class="field-err">Must be &gt; 0</div>
+                                    </template>
+                                </div>
+
+                                <!-- Priority -->
+                                <!-- <div class="ol-cell">
+                                    <div class="label-mob">Priority</div>
+                                    <select class="inp" data-id={line.id} data-field="priority"
+                                            onchange={handleLineChange}>
+                                        <option value="Medium">🟡 Medium</option>
+                                        <option value="High">🔴 High</option>
+                                        <option value="Low">🟢 Low</option>
+                                    </select>
+                                </div> -->
+
+                                <!-- Due Date -->
+                                <!-- <div class="ol-cell">
+                                    <div class="label-mob">Due Date</div>
+                                    <input class="inp" type="date"
+                                        value={line.dueDate} data-id={line.id} data-field="dueDate"
+                                        onchange={handleLineChange} />
+                                </div> -->
+
+                                <!-- Remark -->
+                                <div class="ol-cell">
+                                    <div class="label-mob">Remark</div>
+                                    <input class="inp" type="text" placeholder="Optional note"
+                                        value={line.remark} data-id={line.id} data-field="remark"
+                                        oninput={handleLineChange} />
+                                </div>
+
+                                <!-- Delete -->
+                                <div class="ol-del">
+                                    <button class="btn-del" onclick={handleRemoveLine}
+                                            data-id={line.id}>✕</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:false={hasLines}>
+                            <div class="no-lines">Click "+ Add Line" to start your order</div>
+                        </template>
+
+                        <div class="form-actions">
+                            <button class="btn-add" onclick={handleAddLine}>＋ Add Line</button>
+                            <template if:true={hasLines}>
+                                <div class="total-sum">
+                                    {orderLines.length} line(s) · Total qty: <strong>{totalQty}</strong>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="submit-bar">
+                            <button class="btn-submit" onclick={handleSubmitOrders}
+                                    disabled={isSubmitting}>
+                                {submitBtnLabel}
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+            </template>
+
+            <!-- ══ MY ORDERS TAB ══ -->
+            <template if:true={isTabMyOrders}>
+                <div class="my-orders-section">
+                    <div class="mo-section-head">
+                        <div>
+                            <div class="mo-section-title">My Orders</div>
+                            <div class="mo-section-sub">Accepted &amp; rejected orders from our team</div>
+                        </div>
+                        <template if:true={hasMyOrders}>
+                            <span class="mo-count-badge">{myOrders.length} Orders</span>
+                        </template>
+                    </div>
+
+                    <template if:true={myOrdersLoading}>
+                        <div class="mo-loading">⏳ Loading your orders…</div>
+                    </template>
+
+                    <template if:false={myOrdersLoading}>
+                        <template if:true={hasMyOrders}>
+
+                            <!-- PC TABLE -->
+                            <div class="mo-table-wrap">
+                                <div class="mo-table-scroll">
+                                    <table class="mo-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="c">#</th>
+                                                <!-- <th>Order ID</th> -->
+                                                <th>Item Code</th>
+                                                <th>Color</th>
+                                                <th>Karat</th>
+                                                <th class="r">Qty</th>
+                                                <th>Unit</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Rejection Reason</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template for:each={myOrders} for:item="o">
+                                                <tr key={o.id} class={o.rowClass}>
+                                                    <td class="tc-sr c">{o.srNo}</td>
+                                                    <!-- <td><span class="tc-code">{o.code}</span></td> -->
+                                                    <td><span class="tc-item">{o.itemCode}</span></td>
+                                                    <td>{o.color}</td>
+                                                    <td>{o.karat}</td>
+                                                    <td class="tc-num r">{o.qty}</td>
+                                                    <td>{o.unit}</td>
+                                                    <td class="tc-date">{o.orderDate}</td>
+                                                    <td><span class={o.statusClass}>
+                                                        <template if:true={o.isRejected}>❌</template>
+                                                        <template if:false={o.isRejected}>✔</template>
+                                                        {o.statusLabel}</span></td>
+                                                    <td>
+                                                        <template if:true={o.isRejected}>
+                                                            <span class="tc-reason">
+                                                                <span class="tc-reason-lbl">Reason</span>
+                                                                <span class="tc-reason-text">{o.reason}</span>
+                                                            </span>
+                                                        </template>
+                                                        <template if:false={o.isRejected}>
+                                                            <span class="tc-dash">—</span>
+                                                        </template>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mo-table-footer">Showing {myOrders.length} order(s)</div>
+                            </div>
+
+                            <!-- MOBILE CARDS -->
+                            <div class="mo-cards">
+                                <template for:each={myOrders} for:item="o">
+                                    <div key={o.id} class={o.cardClass}>
+                                        <div class="mo-card-head">
+                                            <span class="mo-card-sr">#{o.srNo}</span>
+                                            <span class="mo-card-code">{o.code}</span>
+                                            <span class={o.statusClass}>{o.statusLabel}</span>
+                                        </div>
+                                        <div class="mo-card-body">
+                                            <div class="mo-field full">
+                                                <span class="mo-lbl">Item Code</span>
+                                                <span class="mo-val">{o.itemCode}</span>
+                                            </div>
+                                            <div class="mo-field">
+                                                <span class="mo-lbl">Color</span>
+                                                <span class="mo-val">{o.color}</span>
+                                            </div>
+                                            <div class="mo-field">
+                                                <span class="mo-lbl">Karat</span>
+                                                <span class="mo-val">{o.karat}</span>
+                                            </div>
+                                            <div class="mo-field">
+                                                <span class="mo-lbl">Quantity</span>
+                                                <span class="mo-val">{o.qty} {o.unit}</span>
+                                            </div>
+                                            <div class="mo-field">
+                                                <span class="mo-lbl">Order Date</span>
+                                                <span class="mo-val">{o.orderDate}</span>
+                                            </div>
+                                        </div>
+                                        <template if:true={o.isRejected}>
+                                            <div class="mo-card-reason">
+                                                <div class="mo-card-reason-lbl">🚫 Rejection Reason</div>
+                                                <div class="mo-card-reason-text">{o.reason}</div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+
+                        </template>
+
+                        <template if:false={hasMyOrders}>
+                            <div class="mo-empty">
+                                <span class="mo-empty-icon">📋</span>
+                                <div class="mo-empty-title">No orders yet</div>
+                                <div class="mo-empty-sub">
+                                    Accepted and rejected orders appear here after our team reviews them.
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </template>
+
+        </div>
+    </template>
+
+</div>
+</template>

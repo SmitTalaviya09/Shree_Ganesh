@@ -1,0 +1,108 @@
+<template>
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Settings · Admin</div>
+            <div class="htitle">User Management</div>
+            <div class="hsub">Create and manage JwelCraft login accounts</div>
+        </div>
+        <div class="hero-right">
+            <button class="btn-primary" onclick={handleShowForm}>＋ Add New User</button>
+        </div>
+    </div>
+
+    <!-- Success banner -->
+    <template if:true={hasSuccess}>
+        <div class="success-banner">✅ {formSuccess}</div>
+    </template>
+
+    <!-- ── ADD USER FORM ── -->
+    <template if:true={showForm}>
+        <div class="form-card">
+            <div class="form-title">New User Account</div>
+            <template if:true={hasError}>
+                <div class="error-banner">⚠️ {formError}</div>
+            </template>
+            <div class="form-grid">
+                <div class="field-group">
+                    <label class="field-label">Full Name</label>
+                    <input class="fi" type="text" placeholder="e.g. Raj Kumar"
+                        value={newFullName} onchange={handleNewFullName}>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Login ID</label>
+                    <input class="fi" type="text" placeholder="e.g. rajkumar01"
+                        value={newLoginId} onchange={handleNewLoginId}
+                        autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Password</label>
+                    <div class="pass-wrap">
+                        <input class="fi fi-pass" type={inputType} placeholder="Set a password"
+                            value={newPassword} onchange={handleNewPassword}
+                            autocomplete="new-password">
+                        <button class="eye-btn" onclick={toggleShowPass}>{eyeIcon}</button>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Role</label>
+                    <select class="fi" value={newRole} onchange={handleNewRole}>
+                        <option value="Manager">Manager</option>
+                        <option value="Craftsman">Craftsman</option>
+                        <option value="Dispatcher">Dispatcher</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" onclick={handleCreateUser} disabled={isLoading}>
+                    <template if:true={isLoading}><span class="spinner"></span> Creating…</template>
+                    <template if:false={isLoading}>✓ Create User</template>
+                </button>
+                <button class="btn-cancel" onclick={handleCancelForm}>Cancel</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ── USERS TABLE ── -->
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Full Name</th>
+                    <th>Login ID</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template for:each={users} for:item="u">
+                    <tr key={u.Id}>
+                        <td class="td-num">{u.rowNum}</td>
+                        <td class="td-name">{u.Name}</td>
+                        <td><span class="login-id-chip">{u.Login_ID__c}</span></td>
+                        <td><span class={u.roleClass}>{u.Role__c}</span></td>
+                        <td><span class={u.statusClass}>{u.statusLabel}</span></td>
+                        <td class="td-date">{u.lastLoginDisplay}</td>
+                        <td>
+                            <button class={u.toggleClass}
+                                data-uid={u.Id}
+                                data-active={u.Is_Active__c}
+                                onclick={handleToggleActive}>
+                                {u.toggleLabel}
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        <template if:false={hasUsers}>
+            <div class="empty">
+                <div class="empty-icon">👥</div>
+                <div class="empty-t">No users yet</div>
+                <div class="empty-s">Click "Add New User" to create the first account</div>
+            </div>
+        </template>
+    </div>
+</template>

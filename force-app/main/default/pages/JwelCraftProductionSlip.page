@@ -1,0 +1,373 @@
+<apex:page controller="JwelCraftSlipController"
+    showHeader="false" sidebar="false"
+    standardStylesheets="false" applyBodyTag="false"
+    applyHtmlTag="false" docType="html-5.0" action="{!autoprint}">
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>{!slipTitle}</title>
+<style>
+@page {
+    size: A4 portrait;
+    margin: 10mm 10mm 10mm;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12pt;
+    background: #fff;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.slip {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+.hdr {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 5mm;
+    border-bottom: 3pt solid #000;
+    margin-bottom: 6mm;
+}
+
+.slip-title {
+    font-size: 34pt;
+    font-weight: 900;
+    color: #000;
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+
+.hdr-right {
+    text-align: right;
+}
+
+.batch-name {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13pt;
+    font-weight: 900;
+    border: 2pt solid #000;
+    padding: 3px 10px;
+    display: inline-block;
+    color: #000;
+}
+
+.slip-date {
+    font-size: 10pt;
+    color: #000;
+    margin-top: 5px;
+    font-weight: 700;
+}
+
+/* TABLE */
+.slip-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12pt;
+    table-layout: fixed;
+}
+
+.col-item { width: 27%; }
+.col-size { width: 33%; }
+.col-cust { width: 22%; }
+.col-qty  { width: 18%; text-align: right; }
+
+.slip-tbl thead tr {
+    background: #000;
+}
+
+.slip-tbl thead th {
+    padding: 4mm 3mm;
+    font-size: 11pt;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #fff;
+    text-align: left;
+    border: 1pt solid #000;
+}
+
+.slip-tbl thead th.col-qty {
+    text-align: right;
+}
+
+.data-row td {
+    padding: 3.5mm 3mm;
+    border: 1pt solid #000;
+    vertical-align: middle;
+    color: #000;
+    background: #fff;
+}
+
+.item-code {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22pt;
+    font-weight: 900;
+    color: #000;
+    letter-spacing: 0.3px;
+}
+
+.size-val {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 19pt;
+    font-weight: 900;
+    color: #000;
+}
+
+.cust-chip {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    font-weight: 900;
+    color: #000;
+    border: 1.5pt solid #000;
+    padding: 2px 8px;
+    display: inline-block;
+}
+
+.reg-label {
+    font-size: 13pt;
+    font-weight: 900;
+    color: #000;
+    border: 1.5pt solid #000;
+    padding: 2px 8px;
+    display: inline-block;
+}
+
+.row-remark {
+    font-size: 10.5pt;
+    color: #000;
+    font-weight: 700;
+    margin-top: 2mm;
+    line-height: 1.25;
+}
+
+.qty-num {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22pt;
+    font-weight: 900;
+    color: #000;
+}
+
+.qty-unit {
+    font-size: 11pt;
+    color: #000;
+    font-weight: 800;
+}
+
+/* GRAND TOTAL */
+.grand-section {
+    margin-top: 8mm;
+    border: 3pt solid #000;
+    page-break-inside: avoid;
+}
+
+.grand-header {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4mm 5mm;
+}
+
+.grand-lbl {
+    font-size: 13pt;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #fff;
+}
+
+.grand-total-num {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 30pt;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+.remark-row td {
+    padding: 2mm 3mm;
+    border-left: 1pt solid #000;
+    border-right: 1pt solid #000;
+    border-bottom: 1pt solid #000;
+    border-top: none;
+    background: #fff;
+    color: #000;
+    font-size: 10pt;
+    line-height: 1.35;
+}
+
+.remark-label {
+    font-weight: 900;
+    text-transform: uppercase;
+    display: inline-block;
+    min-width: 24mm;
+}
+
+.remark-text {
+    font-weight: 700;
+    display: inline-block;
+    padding-left: 3mm;
+    word-break: break-word;
+}
+.err {
+    padding: 10mm;
+    color: #000;
+    font-size: 14pt;
+    font-weight: 900;
+}
+
+@media print {
+    .grand-section,
+    .data-row {
+        page-break-inside: avoid;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
+</head>
+<body>
+
+<apex:outputPanel rendered="{!hasError}">
+    <div class="err">⚠️ {!errorMessage}</div>
+</apex:outputPanel>
+
+<apex:outputPanel rendered="{!!hasError}">
+<div class="slip">
+
+    <!-- HEADER -->
+    <div class="hdr">
+        <div>
+            <!--<div class="brand"><span class="brand-gem">◆</span> JwelCraft</div> -->
+            <div class="slip-title">{!slipTitle}</div>
+            <!--<div class="slip-sub">Production Slip</div> -->
+        </div>
+        <div class="hdr-right">
+            <div class="batch-name">{!batchName}</div>
+            <div class="slip-date">{!slipDate}</div>
+            <!-- <div class="slip-type">JwelCraft Production System</div> -->
+        </div>
+    </div>
+
+    <!-- TABLE — no subtotals, all rows flat -->
+    <table class="slip-tbl">
+        <thead>
+            <tr>
+                <th class="col-item">Item Code</th>
+                <th class="col-size">Size</th>
+                <th class="col-cust">Customer</th>
+                <th class="col-qty">Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <apex:repeat value="{!groups}" var="g">
+
+                <!-- Customer lines -->
+                <apex:outputPanel rendered="{!g.hasCustLines}">
+                    <apex:repeat value="{!g.custLines}" var="cl">
+                        <tr class="data-row item-grp-first">
+                            <td class="col-item">
+                                <span class="item-code">{!g.itemCode}</span>
+                            </td>
+                            <td class="col-size">
+                                <span class="size-val">{!cl.size}</span>
+                            </td>
+                            <td class="col-cust">
+                                <span class="cust-chip">{!cl.customerCode}</span>
+                                 <!--<apex:outputPanel rendered="{!NOT(ISBLANK(cl.remark))}">
+                                    <div class="row-remark">↳ {!cl.remark}</div>
+                                </apex:outputPanel> -->
+                            </td>
+                            <td class="col-qty">
+                                <span class="qty-num">{!cl.qty}</span>
+                                <span class="qty-unit"> {!g.unitLabel}</span>
+                            </td>
+                        </tr>
+                        
+                        <!--<apex:outputPanel rendered="{!NOT(ISBLANK(cl.remark))}">
+                            <tr class="remark-row">
+                                <td colspan="4">
+                                    <span class="remark-label">Remark:</span>
+                                    <span class="remark-text">{!cl.remark}</span>
+                                </td>
+                            </tr>
+                        </apex:outputPanel>-->
+                    </apex:repeat>
+                </apex:outputPanel>
+
+                <!-- Regular line -->
+                <apex:outputPanel rendered="{!g.hasRegular}">
+                    <tr class="data-row reg-row">
+                        <td class="col-item">
+                            <span class="item-code">{!g.itemCode}</span>
+                        </td>
+                        <td class="col-size">
+                            <span class="size-val">{!g.regularSize}</span>
+                        </td>
+                        <td class="col-cust">
+                            <span class="reg-label">Regular</span>
+                             <!--<apex:outputPanel rendered="{!g.hasRegularRemark}">
+                                <div class="row-remark">↳ {!g.regularRemark}</div>
+                            </apex:outputPanel>-->
+                        </td>
+                        <td class="col-qty">
+                            <span class="qty-num">{!g.regularQty}</span>
+                            <span class="qty-unit"> {!g.unitLabel}</span>
+                        </td>
+                    </tr>
+                </apex:outputPanel>
+
+            </apex:repeat>
+        </tbody>
+    </table>
+
+    <!-- GRAND TOTAL — single block at bottom, item wise breakdown -->
+    <div class="grand-section">
+        <div class="grand-header">
+            <span class="grand-lbl">Grand Total</span>
+            <span class="grand-total-num">{!grandTotal}</span>
+        </div>
+        <!--<div class="grand-breakdown">
+            <apex:repeat value="{!groups}" var="g">
+                <span class="grand-item">
+                    <span class="grand-ic">{!g.itemCode}</span>
+                    <span class="grand-q">{!g.totalQty}</span>
+                    <span class="grand-u">{!g.unitLabel}</span>
+                </span>
+            </apex:repeat>
+        </div> -->
+    </div>
+
+    <!-- FOOTER -->
+   <!-- <div class="ftr">
+        <span>JwelCraft Production System</span>
+        <span>{!slipDate}</span>
+    </div> -->
+
+</div>
+</apex:outputPanel>
+
+<script>
+window.addEventListener('load', function() {
+    setTimeout(function() { window.print(); }, 200);
+});
+</script>
+</body>
+</html>
+</apex:page>

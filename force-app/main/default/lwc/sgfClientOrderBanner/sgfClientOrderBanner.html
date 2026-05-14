@@ -1,0 +1,29 @@
+<template>
+    <!-- Badge shown in header even when no popup -->
+    <template if:true={hasClientNew}>
+        <div class="client-badge" title="Client New orders pending">
+            🛒 <span class="badge-count">{clientNewCountLabel}</span> Client New
+        </div>
+    </template>
+
+    <!-- Popup notifications -->
+    <template if:true={showBanner}>
+        <div class="notif-wrap">
+            <div class="notif-header">
+                <span class="notif-title">🔔 New Client Orders</span>
+                <button class="notif-dismiss-all" onclick={handleDismissAll}>Clear all</button>
+            </div>
+            <template for:each={notifications} for:item="n">
+                <div key={n.id} class="notif-item">
+                    <div class="notif-body">
+                        <span class="notif-msg">{n.message}</span>
+                        <span class="notif-time">{n.time}</span>
+                    </div>
+                    <button class="notif-close"
+                        data-id={n.id}
+                        onclick={handleDismiss}>✕</button>
+                </div>
+            </template>
+        </div>
+    </template>
+</template>

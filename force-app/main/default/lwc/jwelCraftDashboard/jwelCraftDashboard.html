@@ -1,0 +1,116 @@
+<template>
+    <!-- ══ DASHBOARD ══ -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Overview</div>
+            <div class="htitle">Dashboard</div>
+            <div class="hsub">{todayDate} · Complete order lifecycle view</div>
+        </div>
+    </div>
+
+    <!-- WORKFLOW TIMELINE -->
+    <div class="timeline">
+        <template for:each={timelineSteps} for:item="step">
+            <div key={step.tab} class={step.cls} data-tab={step.tab} onclick={handleTimelineClick}>
+                <div class="tl-dot">{step.icon}</div>
+                <div class="tl-label">{step.label}</div>
+                <div class="tl-count">{step.count}</div>
+            </div>
+        </template>
+    </div>
+
+    <!-- STAT STRIP -->
+    <div class="stat-strip">
+        <div class="sc" style="--ac:var(--blue2)">
+            <div class="sc-icon">📋</div>
+            <div class="sc-label">Total Orders</div>
+            <div class="sc-val">{counts.orders}</div>
+            <div class="sc-sub">All time</div>
+        </div>
+        <div class="sc" style="--ac:var(--orange2)">
+            <div class="sc-icon">🏭</div>
+            <div class="sc-label">In Production</div>
+            <div class="sc-val">{counts.production}</div>
+            <div class="sc-sub">Active now</div>
+        </div>
+        <div class="sc" style="--ac:var(--green2)">
+            <div class="sc-icon">✅</div>
+            <div class="sc-label">Ready to Dispatch</div>
+            <div class="sc-val">{counts.ready}</div>
+            <div class="sc-sub">Awaiting dispatch</div>
+        </div>
+        <div class="sc" style="--ac:var(--purple)">
+            <div class="sc-icon">🚚</div>
+            <div class="sc-label">Dispatched</div>
+            <div class="sc-val">{counts.dispatched}</div>
+            <div class="sc-sub">Completed</div>
+        </div>
+        <div class="sc" style="--ac:var(--gold2)">
+            <div class="sc-icon">📦</div>
+            <div class="sc-label">Bucket Items</div>
+            <div class="sc-val">{counts.inventoryQty}</div>
+            <div class="sc-sub">Available stock</div>
+        </div>
+    </div>
+
+    <!-- WIDGETS -->
+    <div class="dash-grid">
+        <!-- Recent Orders -->
+        <div class="widget">
+            <div class="wh">
+                <div class="wh-t">Recent Orders</div>
+                <div class="wh-lnk" onclick={handleViewAllOrders}>View all →</div>
+            </div>
+            <template if:true={hasOrders}>
+                <template for:each={recentOrders} for:item="o">
+                    <div key={o.id} class="mini-row" onclick={handleViewAllOrders}>
+                        <div class="mr-code">{o.code}</div>
+                        <div class="mr-cust">{o.customer}</div>
+                        <div><span class={o.matClass}>{o.mat}</span></div>
+                        <div><span class={o.badgeClass}>{o.status}</span></div>
+                    </div>
+                </template>
+            </template>
+            <template if:false={hasOrders}>
+                <div class="empty"><div class="empty-icon">📋</div><div class="empty-t">No orders yet</div></div>
+            </template>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+            <!-- Material Breakdown -->
+            <div class="widget">
+                <div class="wh"><div class="wh-t">Material Breakdown</div></div>
+                <div class="bar-section">
+                    <template for:each={materialBars} for:item="bar">
+                        <div key={bar.mat} class="bar-item">
+                            <div class="bar-info">
+                                <span class="bar-label">{bar.mat}</span>
+                                <span class="bar-val">{bar.count} orders</span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style={bar.style}></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <!-- Workflow Status -->
+            <div class="widget">
+                <div class="wh"><div class="wh-t">Workflow Status</div></div>
+                <div class="bar-section">
+                    <template for:each={workflowBars} for:item="bar">
+                        <div key={bar.label} class="bar-item">
+                            <div class="bar-info">
+                                <span class="bar-label">{bar.label}</span>
+                                <span class="bar-val">{bar.count}</span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style={bar.style}></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,195 @@
+<apex:page controller="SGF_OrderPDFController"
+           renderAs="pdf"
+           showHeader="false"
+           applyBodyTag="false"
+           cache="true">
+
+<head>
+    <style>
+        @page {
+            size: A4;
+            margin: 26mm 18mm 22mm 18mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            color: #1c1408;
+        }
+
+        /* HEADER */
+        .header-band {
+            background-color: #1c1408;
+            padding: 16px 22px 12px 22px;
+            border-radius: 6px 6px 0 0;
+            text-align: center;
+        }
+        .company-gem  { font-size: 18pt; color: #d4a017; display: block; }
+        .company-name { font-size: 16pt; font-weight: bold; color: #f0c040; display: block; }
+        .company-sub  { font-size: 8pt; color: #c8a880; display: block; }
+
+        .title-strip {
+            background-color: #d4a017;
+            padding: 9px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* CLIENT BOX */
+        .client-box {
+            border: 1px solid #d4a017;
+            margin-bottom: 20px;
+        }
+        .client-box-head {
+            background-color: #1c1408;
+            color: #f0c040;
+            padding: 6px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        .client-box-body {
+            padding: 10px;
+            background-color: #fffef9;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        .client-grid td {
+            padding: 4px;
+            font-size: 10pt;
+        }
+
+        /* TABLE */
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        .orders-table thead td {
+            background-color: #1c1408;
+            color: #f0c040;
+            padding: 8px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+
+        .orders-table tbody td {
+            padding: 8px;
+            border-bottom: 1px solid #e8d8a0;
+        }
+
+        .row-even td { background-color: #fef9ec; }
+        .row-odd td  { background-color: #ffffff; }
+
+        .td-right  { text-align: right; }
+        .td-center { text-align: center; }
+
+        .unit-badge {
+            background-color: #fef3c7;
+            border: 1px solid #d4a017;
+            padding: 2px 6px;
+            font-size: 8pt;
+        }
+
+        .status-badge {
+            background-color: #edf7f1;
+            border: 1px solid #27a35a;
+            padding: 2px 6px;
+            font-size: 8pt;
+        }
+
+        /* FOOTER */
+        .footer-note {
+            background-color: #fef9ec;
+            border: 1px solid #e8d8a0;
+            padding: 10px;
+            font-size: 9pt;
+            margin-top: 20px;
+        }
+
+        .footer-main {
+            text-align: center;
+            font-size: 9pt;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header-band">
+        <span class="company-gem">&#9670;</span>
+        <span class="company-name">Shree Ganesh Finding</span>
+    </div>
+
+    <div class="title-strip">
+        <b>Order Confirmation</b>
+    </div>
+
+    <!-- CLIENT INFO -->
+    <div class="client-box">
+        <div class="client-box-head">Client Order Details</div>
+        <div class="client-box-body">
+            <table class="client-grid">
+                <tr>
+                    <td><b>Client Name</b></td>
+                    <td>{!clientName}</td>
+                    <td><b>Date</b></td>
+                    <td>
+                        <apex:outputText value="{0, date, dd MMM yyyy}">
+                            <apex:param value="{!TODAY()}"/>
+                        </apex:outputText>
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>GST</b></td>
+                    <td>{!gstNumber}</td>
+                    <td><b>Total Orders</b></td>
+                    <td>{!orders.size}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <table class="orders-table">
+        <thead>
+            <tr>
+                <td class="td-center">#</td>
+                <!--<td>Order Code</td>-->
+                <td>Item</td>
+                <td class="td-right">Qty</td>
+                <td>Unit</td>
+                <!--<td>Status</td>-->
+            </tr>
+        </thead>
+
+        <tbody>
+            <apex:repeat value="{!orders}" var="o">
+                <tr class="{!IF(o.isEven,'row-even','row-odd')}">
+                    <td class="td-center">{!o.serialNo}</td>
+                   <!-- <td>{!o.orderCode}</td>-->
+                    <td>{!o.itemCode}</td>
+                    <td class="td-right">{!o.quantity}</td>
+                    <td><span class="unit-badge">{!o.unit}</span></td>
+                    <!--<td><span class="status-badge">{!o.status}</span></td>-->
+                </tr>
+            </apex:repeat>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <div class="footer-note">
+        <b>Important Note:</b><br/>
+        Please retain this confirmation for your records. Orders are processed in sequence.
+    </div>
+
+    <div class="footer-main">
+        <b>Shree Ganesh Finding</b><br/>
+        Thank you for your order.
+    </div>
+
+</body>
+</apex:page>

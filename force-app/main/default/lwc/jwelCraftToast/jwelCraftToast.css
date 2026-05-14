@@ -1,0 +1,11 @@
+:host { display:block; }
+.toast{position:fixed;bottom:26px;right:26px;z-index:9999;background:#1c1408;border:1px solid rgba(212,160,23,.3);border-radius:16px;padding:13px 18px;display:flex;align-items:center;gap:11px;box-shadow:0 16px 60px rgba(28,20,8,.18);transform:translateY(80px) scale(.96);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);min-width:270px;max-width:340px;pointer-events:none}
+.toast.show{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
+.ti{font-size:17px;flex-shrink:0}
+.tt{font-size:13px;font-weight:700;color:#f5ead5}
+.ts{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 768px) {
+  .toast{bottom:74px;right:12px;left:12px;min-width:0;max-width:100%}
+}

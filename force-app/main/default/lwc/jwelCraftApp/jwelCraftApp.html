@@ -1,0 +1,353 @@
+<template>
+     <div class="overrideStyle"></div>
+    <!-- ══ LOGIN SCREEN ══ -->
+    <template if:false={isLoggedIn}>
+        <c-jwel-craft-login onloginsuccess={handleLoginSuccess}></c-jwel-craft-login>
+    </template>
+
+    <!-- ══ MAIN APP ══ -->
+    <template if:true={isLoggedIn}>
+
+        <template if:true={isLoading}>
+            <div class="loading-overlay">
+                <lightning-spinner
+                    alternative-text="Loading"
+                    size="large">
+                </lightning-spinner>
+            </div>
+        </template>
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="tb-brand">
+                <!-- <div class="tb-gem">💎</div> -->
+                <div class="tb-gem">
+                    <img src={gemIcon} alt="Gem Icon" class="gem-icon" style="width: 71%;"/>
+                </div>
+                <div>
+                    <div class="tb-name">SHREE GANESH</div>
+                    <div class="tb-sub">Order Management</div>
+                </div>
+            </div>
+            <button class="tb-hamburger" onclick={handleToggleSidebar} title="Menu">☰</button>
+            <div class="tb-mid"></div>
+            <div class="tb-right">
+                <button class="tb-btn tb-btn-gold" onclick={handleNewOrder}>＋ New Order</button>
+                <!-- <template if:true={isStockManager}>
+                    <button class="tb-btn tb-btn-ghost" onclick={handleInventory}>📦 Stock</button>
+                </template> -->
+                <!-- ★ NEW — Catalogue download button ★ -->
+                    <button class="btn-catalogue" onclick={handleDownloadCatalogue}
+                            title="Download Product Catalogue">
+                        📄 Catalogue
+                    </button>
+                <template if:true={isProductionWorker}>
+                    <button class="tb-btn tb-btn-ghost" onclick={handleQuickStock}>🔍 Material Stock</button>
+                </template>
+                <div class="user-chip">
+                    <div class="u-av">{userInitials}</div>
+                    <div>
+                        <div class="u-name">{userName}</div>
+                        <div class="u-role">{userRole}</div>
+                    </div>
+                </div>
+                <button class="tb-btn tb-btn-logout" onclick={handleLogout}>⏻ Logout</button>
+            </div>
+        </header>
+
+        <div class="shell">
+            <div class="sb-backdrop" onclick={handleCloseSidebar}></div>
+
+            <!-- SIDEBAR — role-based navigation -->
+            <aside class={sidebarClass}>
+                <div class="sb-top">
+                    <div class="sb-greeting">Welcome back 👋</div>
+                    <div class="sb-date">{todayDate}</div>
+                </div>
+
+                <!-- ALL ROLES: Dashboard + All Orders -->
+                <template if:true={canViewOverview}>
+                    <div class="sb-section">Overview</div>
+                    <div class={dashboardNavClass} onclick={handleDashboard}>
+                        <span class="sb-icon">📊</span>Dashboard
+                    </div>
+                    <div class={completeOrderNavClass} onclick={handleClientOrders}>
+                        <span class="sb-icon">🛒</span>Client Order Review
+                        <!-- <span class="sb-badge sb-badge-r">{counts.clientNew}</span> -->
+                    </div>
+                    <div class={allocateStockNavClass} onclick={handleAllocateStock}>
+                        <span class="sb-icon">🎯</span>Allocate Stock
+                    </div>
+                    <div class={ordersNavClass} onclick={handleAllOrders}>
+                        <span class="sb-icon">📋</span>All Orders
+                        <span class="sb-badge sb-badge-g">{counts.total}</span>
+                    </div>
+                </template>
+
+                <!-- ORDER CREATOR role -->
+                <template if:true={canCreateOrders}>
+                    <div class="sb-section">Order Entry</div>
+                    <div class={newOrderNavClass} onclick={handleNewOrder}>
+                        <span class="sb-icon">➕</span>New Order
+                    </div>
+                </template>
+
+                <!-- STOCK MANAGER role -->
+                <template if:true={isStockManager}>
+                    <div class="sb-section">Stock Management</div>
+
+                    <div class={prodQueueNavClass} onclick={handleProductionQueue}>
+                        <span class="sb-icon">📤</span>Bag Generate
+                        <span class="sb-badge sb-badge-r">{counts.prodQueue}</span>
+                    </div>
+                    <!-- <div class={allocateStockNavClass} onclick={handleAllocateStock}>
+                        <span class="sb-icon">🎯</span>Allocate Stock
+                    </div> -->
+                </template>
+
+                <!-- PRODUCTION WORKER role -->
+                <template if:true={isProductionWorker}>
+                    <div class="sb-section">Production</div>
+                    <div class={prodBoardNavClass} onclick={handleProductionBoard}>
+                        <span class="sb-icon">🏭</span>Production Board
+                        <span class="sb-badge sb-badge-r">{counts.inProduction}</span>
+                    </div>
+                    <div class={prodBoardWhiteNavClass} onclick={handleProductionBoardWhite}>
+                        <span class="sb-icon">🏭</span>Production Board White
+                        <span class="sb-badge sb-badge-r">{counts.inProduction}</span>
+                    </div>
+                    <!-- <div class={quickStockNavClass} onclick={handleQuickStock}>
+                        <span class="sb-icon">⚡</span>Material Stock Search
+                    </div> -->
+                </template>
+
+                <!-- ADMIN / MANAGER role — sees everything -->
+                <template if:true={isManager}>
+                    <div class="sb-section">Production</div>
+
+                    <div class={prodQueueNavClass} onclick={handleProductionQueue}>
+                        <span class="sb-icon">📤</span>Bag Generate
+                        <span class="sb-badge sb-badge-r">{counts.prodQueue}</span>
+                    </div>
+                    <div class={prodBoardNavClass} onclick={handleProductionBoard}>
+                        <span class="sb-icon">🏭</span>Production Board
+                        <span class="sb-badge sb-badge-g">{counts.inProduction}</span>
+                    </div>
+                    <div class={prodBoardWhiteNavClass} onclick={handleProductionBoardWhite}>
+                        <span class="sb-icon">🏭</span>Production Board White
+                        <span class="sb-badge sb-badge-r">{counts.inProduction}</span>
+                    </div>
+                    <div class={quickStockNavClass} onclick={handleQuickStock}>
+                        <span class="sb-icon">⚡</span>Material Stock
+                    </div>
+                    <!-- <div class={allocateStockNavClass} onclick={handleAllocateStock}>
+                        <span class="sb-icon">🎯</span>Allocate Stock
+                    </div> -->
+                    <!-- <div class={readyNavClass} onclick={handleReady}>
+                        <span class="sb-icon">✅</span>Ready to Dispatch
+                        <span class="sb-badge sb-badge-gr">{counts.ready}</span>
+                    </div> -->
+                    <div class="sb-section">Ready Order</div>
+                    <div class={adminDispatchNavClass} onclick={handleDispatched}>
+                        <span class="sb-icon">🚚</span>Ready to Dispatch
+                    </div>
+                    <div class={completeOrderNavClass} onclick={handleCompleteOrder}>
+                        <span class="sb-icon">✔️</span>Complete Orders
+                    </div>
+                    
+                    <!-- <div class={inventoryNavClass} onclick={handleInventory}>
+                        <span class="sb-icon">📦</span>Inventory Bucket
+                    </div> -->
+                    <div class="sb-section">Client Management</div>
+                    <div class={userMgmtNavClass} onclick={handleUserMgmt}>
+                        <span class="sb-icon">👥</span>User Management
+                    </div>
+                    
+                    <div class={clientRegNavClass} onclick={handleClientReg}>
+                        <span class="sb-icon">🏢</span>Client Registrations
+                    </div>
+                    <!-- <div class={completeOrderNavClass} onclick={handleClientOrders}>
+                        <span class="sb-icon">🛒</span>Client Order Review
+                        <span class="sb-badge sb-badge-r">{counts.clientNew}</span>
+                    </div> -->
+                    <template if:true={isAdmin}>
+                        <div class="sb-section">Admin</div>
+                        <div class={deletedOrdersNavClass} onclick={handleDeletedOrders}>
+                            <span class="sb-icon">🗑️</span>Deleted Orders
+                        </div>
+                    </template>
+                    <c-sgf-client-order-banner></c-sgf-client-order-banner>
+                </template>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="content">
+
+                <template if:true={showDashboard}>
+                    <c-jwel-craft-dashboard
+                        orders={orders}
+                        inventory={inventory}
+                        dispatched={dispatched}
+                        counts={counts}
+                        today-date={todayDate}
+                        onnavigate={handleChildNavigate}>
+                    </c-jwel-craft-dashboard>
+                </template>
+
+                <template if:true={showAllOrders}>
+                    <c-jwel-craft-all-orders
+                        orders={orders}
+                        onstatuschange={handleStatusChange}
+                        ondeleteorder={handleDeleteOrder}
+                        onnavigate={handleChildNavigate}>
+                    </c-jwel-craft-all-orders>
+                </template>
+
+                <!-- NEW ORDER — uses new OrderEntry component -->
+                <template if:true={showNewOrder}>
+                    <c-jwel-craft-order-entry
+                        user-name={userName}
+                        user-role={userRole}
+                        onorderssaved={handleOrdersSaved}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-order-entry>
+                </template>
+
+                <!-- Bag Generate — Role 2 -->
+                <template if:true={showProdQueue}>
+                    <c-jwel-craft-production-queue
+                        orders={prodQueueOrders}
+                        user-name={userName}
+                        onbatchcreated={handleBatchCreated}
+                        onrefreshorders={handleRefreshOrders}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-production-queue>
+                </template>
+
+                <!-- PRODUCTION BOARD — Role 3 -->
+                <template if:true={showProdBoard}>
+                    <c-jwel-craft-production-board
+                        orders={orders}
+                        user-name={userName}
+                        onbatchcompleted={handleBatchCompleted}
+                        onrefreshorders={handleRefreshOrders}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-production-board>
+                </template>
+                <!-- PRODUCTION BOARD WHITE -->
+                <template if:true={showProdBoardWhite}>
+                    <c-jwel-craft-production-board-white
+                        orders={orders}
+                        user-name={userName}
+                        onbatchcompleted={handleBatchCompleted}
+                        onrefreshorders={handleRefreshOrders}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-production-board-white>
+                </template>
+                <!-- QUICK STOCK (Material Stock) — Role 3 -->
+                <template if:true={showQuickStock}>
+                    <c-jwel-craft-quick-stock
+                        user-role={userRole}
+                        user-name={userName}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-quick-stock>
+                </template>
+
+                <!-- ADMIN DISPATCH — Admin only -->
+                <template if:true={showAdminDispatch}>
+                    <c-jwel-craft-admin-dispatch
+                        orders={orders}
+                        user-name={userName}
+                        onrefreshorders={handleRefreshOrders}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-admin-dispatch>
+                </template>
+
+                <!-- ALLOCATE STOCK — Stock Manager + Manager -->
+                <template if:true={showAllocateStock}>
+                    <c-jwel-craft-allocate-stock
+                        user-name={userName}
+                        user-role={userRole}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-allocate-stock>
+                </template>
+
+                <!-- CLIENT ORDER REVIEW — Manager only -->
+                <template if:true={showClientOrders}>
+                    <c-jwel-craft-client-orders
+                        user-name={userName}
+                        onrefreshorders={handleRefreshOrders}
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-client-orders>
+                </template>
+                <!-- INVENTORY BUCKET -->
+                <!-- <template if:true={showInventory}>
+                    <c-jwel-craft-inventory
+                        inventory={inventory}
+                        oninventoryupdate={handleInventoryUpdate}
+                        onnavigate={handleChildNavigate}>
+                    </c-jwel-craft-inventory>
+                </template> -->
+
+                <!-- USER MANAGEMENT — Admin only -->
+                <template if:true={showUserMgmt}>
+                    <c-jwel-craft-user-mgmt></c-jwel-craft-user-mgmt>
+                </template>
+
+                <!-- CLIENT REGISTRATIONS — Manager only -->
+                <template if:true={showClientReg}>
+                    <c-jwel-craft-client-reg
+                        onshowtoast={handleChildToast}>
+                    </c-jwel-craft-client-reg>
+                </template>
+                <template if:true={showCompleteOrder}>
+                    <c-jwel-craft-complete-order
+                        user-name={userName}
+                        onshowtoast={handleChildToast}
+                        onrefreshorders={handleRefreshOrders}>
+                    </c-jwel-craft-complete-order>
+                </template>
+                <template if:true={showDeletedOrders}>
+                    <c-jwel-craft-deleted-orders
+                        user-name={userName}
+                        user-role={userRole}
+                        onshowtoast={handleChildToast}
+                        onrefreshorders={handleRefreshOrders}>
+                    </c-jwel-craft-deleted-orders>
+                </template>
+            </main>
+        </div>
+
+        <c-jwel-craft-toast
+            message={toastMessage}
+            sub-message={toastSubMessage}
+            icon={toastIcon}
+            is-visible={toastVisible}>
+        </c-jwel-craft-toast>
+
+        <!-- MOBILE BOTTOM NAV -->
+        <nav class="mobile-nav">
+            <button class={mnDashClass} onclick={handleDashboard}>
+                <span class="mn-icon">📊</span>
+                <span class="mn-label">Home</span>
+            </button>
+            <button class={mnOrdersClass} onclick={handleAllOrders}>
+                <span class="mn-icon">📋</span>
+                <span class="mn-label">Orders</span>
+            </button>
+            <button class={mnNewClass} onclick={handleNewOrder} style="background:rgba(212,160,23,.15);border-radius:12px">
+                <span class="mn-icon">➕</span>
+                <span class="mn-label" style="color:var(--gold2)">New</span>
+            </button>
+            <button class={mnRoleClass} onclick={handleRoleAction}>
+                <span class="mn-icon">{mnRoleIcon}</span>
+                <span class="mn-label">{mnRoleLabel}</span>
+            </button>
+            <button class="mn-item" onclick={handleToggleSidebar}>
+                <span class="mn-icon">☰</span>
+                <span class="mn-label">More</span>
+            </button>
+        </nav>
+
+    </template>
+</template>

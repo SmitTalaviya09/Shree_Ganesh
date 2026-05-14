@@ -1,0 +1,167 @@
+<template>
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Stock</div>
+            <div class="htitle">Inventory Bucket</div>
+            <div class="hsub">Available stock from production leftovers — auto-checked for new orders</div>
+        </div>
+        <div class="hero-right">
+            <button class="btn-primary" onclick={handleOpenAddModal}>＋ Add Stock</button>
+        </div>
+    </div>
+
+    <div class="inv-grid">
+        <template if:true={hasInventory}>
+            <template for:each={inventoryCards} for:item="item">
+                <div key={item.id} class="inv-card">
+                    <div class="inv-top">
+                        <div class="inv-mat" style={item.matStyle}>
+                            {item.mat}
+                            <template if:true={item.kar}> · {item.kar}</template>
+                        </div>
+                        <div class="inv-sku">INV-{item.id} · Size {item.sizeDisplay}</div>
+                    </div>
+                    <div class="inv-body">
+                        <div class="inv-item-name">{item.name}</div>
+
+                        <!-- Quantity type: pieces -->
+                        <template if:false={item.isLW}>
+                            <div class="inv-qty">{item.qty}</div>
+                            <div class="inv-unit">piece(s) available</div>
+                        </template>
+
+                        <!-- LengthWeight type: inches · grams on one line -->
+                        <template if:true={item.isLW}>
+                            <div class="inv-qty inv-qty-lw">{item.lwDisplay}</div>
+                            <div class="inv-unit">available</div>
+                        </template>
+
+                        <div class="inv-bar">
+                            <div class="inv-bar-fill" style={item.barStyle}></div>
+                        </div>
+                        <template if:true={item.notes}>
+                            <div class="inv-notes">{item.notes}</div>
+                        </template>
+                    </div>
+                    <div class="inv-footer">
+                        <div class="inv-status" style={item.statusStyle}>{item.stockStatusLabel}</div>
+                        <button class="inv-action" data-id={item.id} onclick={handleRemove}>Remove</button>
+                    </div>
+                </div>
+            </template>
+        </template>
+        <template if:false={hasInventory}>
+            <div style="grid-column:1/-1">
+                <div class="empty">
+                    <div class="empty-icon">📦</div>
+                    <div class="empty-t">Bucket is empty</div>
+                    <div class="empty-s">Leftover items from dispatches appear here</div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Add Stock Modal -->
+    <template if:true={showAddModal}>
+        <div class="overlay on" onclick={handleOverlayClick}>
+            <div class="modal" style="max-width:480px">
+                <div class="modal-hd">
+                    <div>
+                        <div class="modal-title">📦 Add Stock to Bucket</div>
+                        <div class="modal-sub">Manually add inventory items</div>
+                    </div>
+                    <button class="modal-close" onclick={handleCloseModal}>✕</button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="disp-field">
+                        <div class="disp-label">Item Name *</div>
+                        <input class="fi2" value={newItem.name} data-field="name"
+                            onchange={handleNewItemChange}
+                            placeholder="e.g. Ring Setting 18K Yellow Gold Size 16">
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="disp-field">
+                            <div class="disp-label">Material *</div>
+                            <select class="fi2" value={newItem.mat} data-field="mat"
+                                onchange={handleNewItemChange}>
+                                <option value="">Select…</option>
+                                <option value="Yellow Gold">Yellow Gold</option>
+                                <option value="White Gold">White Gold</option>
+                                <option value="Rose Gold">Rose Gold</option>
+                                <option value="Silver">Silver</option>
+                            </select>
+                        </div>
+                        <div class="disp-field">
+                            <div class="disp-label">Karat</div>
+                            <select class="fi2" value={newItem.kar} data-field="kar"
+                                onchange={handleNewItemChange}>
+                                <option value="">—</option>
+                                <option value="14K">14K</option>
+                                <option value="18K">18K</option>
+                                <option value="22K">22K</option>
+                                <option value="24K">24K</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="disp-field">
+                        <div class="disp-label">Size</div>
+                        <input class="fi2" value={newItem.size} data-field="size"
+                            onchange={handleNewItemChange} placeholder="e.g. 16">
+                    </div>
+
+                    <!-- Measurement type toggle -->
+                    <div class="disp-field">
+                        <div class="disp-label">Measurement Type</div>
+                        <div class="mtype-toggle">
+                            <button class={piecesTabClass} data-type="pieces"
+                                onclick={handleMeasureTypeToggle}>Pieces</button>
+                            <button class={lwTabClass} data-type="lw"
+                                onclick={handleMeasureTypeToggle}>Inches + Grams</button>
+                        </div>
+                    </div>
+
+                    <!-- Pieces input -->
+                    <template if:false={newItemIsLW}>
+                        <div class="disp-field">
+                            <div class="disp-label">Quantity (pieces) *</div>
+                            <input class="fi2" type="number" value={newItem.qty}
+                                data-field="qty" onchange={handleNewItemChange} min="1">
+                        </div>
+                    </template>
+
+                    <!-- Inches + Grams inputs -->
+                    <template if:true={newItemIsLW}>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                            <div class="disp-field">
+                                <div class="disp-label">Inches *</div>
+                                <input class="fi2" type="number" step="0.01" min="0"
+                                    value={newItem.inches} data-field="inches"
+                                    onchange={handleNewItemChange} placeholder="0.00">
+                            </div>
+                            <div class="disp-field">
+                                <div class="disp-label">Grams *</div>
+                                <input class="fi2" type="number" step="0.001" min="0"
+                                    value={newItem.grams} data-field="grams"
+                                    onchange={handleNewItemChange} placeholder="0.000">
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="disp-field">
+                        <div class="disp-label">Notes</div>
+                        <input class="fi2" value={newItem.notes} data-field="notes"
+                            onchange={handleNewItemChange} placeholder="Source, batch, etc.">
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-confirm" onclick={handleAddItem}>Add to Bucket</button>
+                        <button class="btn-modal-cancel" onclick={handleCloseModal}>Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>

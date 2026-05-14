@@ -1,0 +1,356 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Stock Manager</div>
+            <div class="htitle">Bag Generate</div>
+            <div class="hsub">Select orders with same Karat &amp; Color · Create production slip</div>
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat">
+                <span class="hs-val">{totalOrders}</span>
+                <span class="hs-lbl">Pending</span>
+            </div>
+            <template if:true={hasSelected}>
+                <div class="hero-stat hs-sel">
+                    <span class="hs-val">{selectedCount}</span>
+                    <span class="hs-lbl">Selected</span>
+                </div>
+                <button class="btn-print" onclick={handlePrintSelected}>
+                    🖨 Print Slip ({selectedCount})
+                </button>
+            </template>
+        </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="tb-search-wrap">
+            <span>🔍</span>
+            <input class="tb-search" type="search"
+                placeholder="Search order, customer, item code…"
+                value={searchTerm} oninput={handleSearch} />
+        </div>
+        <select class="tb-filter" value={filterCategory} onchange={handleCategoryFilter}>
+            <option value="">All Categories</option>
+            <template for:each={allCategoryValues} for:item="cat">
+                <option key={cat} value={cat}>{cat}</option>
+            </template>
+        </select>
+        <select class="tb-filter" value={filterColor} onchange={handleColorFilter}>
+            <option value="">All Colors</option>
+            <option value="Yellow Gold">Yellow Gold</option>
+            <option value="White Gold">White Gold</option>
+            <option value="Rose Gold">Rose Gold</option>
+            <option value="Silver">Silver</option>
+        </select>
+
+        <select class="tb-filter" value={filterKarat} onchange={handleKaratFilter}>
+            <option value="">All Karats</option>
+            <template for:each={allKaratValues} for:item="k">
+                <option key={k} value={k}>{k}</option>
+            </template>
+        </select>
+
+        <template if:true={hasOrders}>
+            <button class="btn-select-all" onclick={handleSelectAll}>{selectAllLabel}</button>
+        </template>
+        <span class="tb-count">{queueOrders.length} order(s)</span>
+    </div>
+
+    <!-- ORDERS TABLE -->
+    <div class="table-wrap">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Processing…</div>
+        </template>
+        <template if:false={isLoading}>
+            <template if:true={hasOrders}>
+
+                <div class="tbl-head">
+                    <div class="th th-chk"></div>
+                    <div class="th">Customer</div>
+                    <div class="th">Item Code</div>
+                    <div class="th">Size</div>
+                    <div class="th">Color</div>
+                    <div class="th">Karat</div>
+                    <div class="th th-center">Qty</div>
+                    <div class="th">Unit</div>
+                    <div class="th">Remark</div>
+                </div>
+
+                <template for:each={queueOrdersMapped} for:item="o">
+                    <div key={o.id} class={o.rowClass}
+                        onclick={handleSelectOrder} data-code={o.code}>
+
+                        <div class="td td-chk">
+                            <div class={o.chkClass}></div>
+                        </div>
+
+                        <div class="td td-cust-wrap">
+                            <span class="td-cust">{o.customer}</span>
+                            <template if:true={o.customerCode}>
+                                <span class="td-sub">{o.customerCode}</span>
+                            </template>
+                        </div>
+
+                        <div class="td td-item">{o.itemCode}</div>
+                        <div class="td td-size">{o.size}</div>
+                        <div class="td">
+                            <span class="tag tag-color">{o.color}</span>
+                        </div>
+
+                        <div class="td">
+                            <template if:true={o.kar}>
+                                <span class="tag tag-karat">{o.kar}</span>
+                            </template>
+                        </div>
+
+                        <div class="td td-center">
+                            <span class="qty-badge">{o.qty}</span>
+                        </div>
+
+                        <div class="td td-unit">{o.qtyUnit}</div>
+
+                        <div class="td td-remark">{o.notes}</div>
+                    </div>
+                </template>
+
+            </template>
+            <template if:false={hasOrders}>
+                <div class="empty-state">
+                    <div class="es-icon">🏭</div>
+                    <div class="es-title">No orders in Bag Generate</div>
+                    <div class="es-sub">Orders move here from Stock Check when no stock is available</div>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- ══ SLIP PREVIEW MODAL ══ -->
+    <template if:true={showPrintModal}>
+        <div class="modal-backdrop" onclick={handleClosePrintModal}></div>
+        <div class="slip-modal">
+
+            <!-- Modal Header -->
+            <div class="sm-header">
+                <div class="sm-header-left">
+                    <div class="sm-eyebrow">Production Slip Preview</div>
+                    <div class="sm-title">{slipTitle}</div>
+                </div>
+                <button class="modal-close" onclick={handleClosePrintModal}>✕</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="sm-body">
+
+                <!-- SLIP TABLE -->
+                <div class="slip-table-wrap">
+                    <table class="slip-table">
+
+                        <!-- THEAD — one column per item code + add column -->
+                        <thead>
+                            <tr>
+                                <th class="sth sth-fixed sth-cust">Customer</th>
+                                <th class="sth sth-fixed sth-remark">Remark</th>
+                                <template for:each={slipColumns} for:item="col">
+                                    <th key={col.key} class="sth sth-item">
+                                        <div class="sth-item-inner">
+                                            <div class="sth-item-top">
+                                                <span class="sth-code">{col.itemCode}</span>
+                                                <template if:true={col.size}>
+                                                    <span class="sth-size">{col.size}</span>
+                                                </template>
+                                                <button class="btn-remove-col"
+                                                    data-ic={col.key}
+                                                    onclick={handleRemoveColumn}
+                                                    title="Remove column">✕</button>
+                                            </div>
+                                            <span class="sth-unit">({col.unit})</span>
+                                        </div>
+                                    </th>
+                                </template>
+
+                                <!-- Add new item code column -->
+                                <!-- <th class="sth sth-addcol">
+                                    <div class="addcol-wrap">
+                                        <div class="addcol-label">＋ Add Item</div>
+                                        <div class="addcol-trigger" onclick={handleNewColPickFocus}>
+                                            <span class={newColLabelClass}>{newColLabel}</span>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+                                        <input class="addcol-size"
+                                            type="text"
+                                            placeholder="Size"
+                                            value={newColSize}
+                                            oninput={handleNewColSizeInput} />
+                                        <template if:true={newColShowPick}>
+                                            <div class="addcol-dropdown" onclick={handleNewColDropdownClick}>
+                                                <input class="addcol-search" type="text"
+                                                    placeholder="Search item…"
+                                                    value={newColSearch}
+                                                    oninput={handleNewColSearch} />
+                                                <div class="addcol-list">
+                                                    <template if:true={newColHasOptions}>
+                                                        <template for:each={newColFiltered} for:item="opt">
+                                                            <div key={opt} class="addcol-option"
+                                                                 onmousedown={handleNewColSelect}
+                                                                 data-value={opt}>{opt}</div>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={newColHasOptions}>
+                                                        <div class="addcol-empty">No more items</div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </th> -->
+                                <th class="sth sth-addcol">
+                                    <div class="addcol-wrap">
+                                        <div class="addcol-label">＋ Add Item</div>
+
+                                        <!-- Item Code Picker -->
+                                        <div class="addcol-trigger" onclick={handleNewColPickFocus}>
+                                            <span class={newColLabelClass}>{newColLabel}</span>
+                                            <span class="pick-chev">▾</span>
+                                        </div>
+
+                                        <template if:true={newColShowPick}>
+                                            <div class="addcol-dropdown" onclick={handleNewColDropdownClick}>
+                                                <input class="addcol-search" type="text"
+                                                    placeholder="Search item…"
+                                                    value={newColSearch}
+                                                    oninput={handleNewColSearch} />
+                                                <div class="addcol-list">
+                                                    <template if:true={newColHasOptions}>
+                                                        <template for:each={newColFiltered} for:item="opt">
+                                                            <div key={opt} class="addcol-option"
+                                                                onmousedown={handleNewColSelect}
+                                                                data-value={opt}>{opt}</div>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={newColHasOptions}>
+                                                        <div class="addcol-empty">No more items</div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Size field — auto-filled or manual -->
+                                        <div class="addcol-size-wrap">
+                                            <input class="addcol-size"
+                                                type="text"
+                                                placeholder="Size (auto or manual)"
+                                                value={newColSize}
+                                                oninput={handleNewColSizeInput}
+                                                onblur={handleNewColSizeBlur} />
+
+                                            <!-- Auto-filled badge -->
+                                            <template if:true={newColSizeAutoFilled}>
+                                                <span class="size-auto-badge" title="Auto-filled from item config">
+                                                    ✓ Auto
+                                                </span>
+                                            </template>
+                                        </div>
+
+                                        <!-- Validation error -->
+                                        <template if:true={newColSizeError}>
+                                            <div class="addcol-size-error">
+                                                ⚠️ {newColSizeError}
+                                            </div>
+                                        </template>
+
+                                        <!-- Manual add button (shown only when no auto-fill) -->
+                                        <template if:false={newColSizeAutoFilled}>
+                                            <template if:true={newColCode}>
+                                                <button class="btn-addcol-manual"
+                                                    onclick={handleAddColumnManual}
+                                                    disabled={isLoading}>
+                                                    ＋ Add
+                                                </button>
+                                            </template>
+                                        </template>
+
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <!-- Customer + Regular rows -->
+                            <template for:each={slipRowsMapped} for:item="row">
+                                <tr key={row.rowKey} class={row.trClass}>
+
+                                    <!-- Customer name + code -->
+                                    <td class="std std-cust">
+                                        <template if:false={row.isRegular}>
+                                            <span class="cust-name-lbl">{row.customer}</span>
+                                            <span class="cust-code-lbl">{row.customerCode}</span>
+                                        </template>
+                                        <template if:true={row.isRegular}>
+                                            <span class="regular-lbl">⬡ Regular</span>
+                                        </template>
+                                    </td>
+
+                                    <!-- Remark -->
+                                    <td class="std std-remark">
+                                        <span class="remark-lbl">{row.remark}</span>
+                                    </td>
+
+                                    <!-- Editable qty cells — one per column -->
+                                    <template for:each={row.cellList} for:item="cell">
+                                        <td key={cell.key} class="std std-cell">
+                                            <input class="cell-input"
+                                                type="number"
+                                                min="0"
+                                                value={cell.qty}
+                                                data-rowkey={row.rowKey}
+                                                data-ic={cell.colKey}
+                                                oninput={handleCellInput} />
+                                        </td>
+                                    </template>
+
+                                    <!-- Empty cell under add-column header -->
+                                    <td class="std std-cell-empty"></td>
+                                </tr>
+                            </template>
+
+                            <!-- TOTALS ROW -->
+                            <tr class="slip-tr-totals">
+                                <td class="std-total-lbl" colspan="2">Total</td>
+                                <template for:each={slipTotalsMapped} for:item="tot">
+                                    <td key={tot.key} class="std-total-val">
+                                        <span class="total-num">{tot.total}</span>
+                                        <span class="total-unit">{tot.unit}</span>
+                                    </td>
+                                </template>
+                                <td class="std-total-empty"></td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <!-- Grand total -->
+                <div class="slip-grand-total">
+                    Grand Total: <strong>{slipGrandTotal}</strong>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="sm-footer">
+                <button class="btn-cancel" onclick={handleClosePrintModal}>Cancel</button>
+                <button class="btn-confirm" onclick={handleConfirmPrint} disabled={isLoading}>
+                    <template if:false={isLoading}>✅ Confirm &amp; Print Slip</template>
+                    <template if:true={isLoading}>Creating batch…</template>
+                </button>
+            </div>
+
+        </div>
+    </template>
+
+</div>
+</template>

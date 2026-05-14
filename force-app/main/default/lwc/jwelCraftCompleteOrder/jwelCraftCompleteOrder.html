@@ -1,0 +1,71 @@
+<template>
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Completed</div>
+            <div class="htitle">Dispatched Orders</div>
+            <div class="hsub">All delivered orders with dispatch details</div>
+        </div>
+    </div>
+
+    <div class="tbl-wrap" style="padding-top:20px">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Loading dispatched orders…</div>
+        </template>
+        <template if:false={isLoading}>
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <!-- <th>Order Code</th> -->
+                        <th>Customer</th>
+                        <th>Item Code</th>
+                        <th>Material</th>
+                        <th>Karat</th>
+                        <th>Ordered Qty</th>
+                        <th>Dispatched Qty</th>
+                        <th>Leftover</th>
+                        <!-- <th>Due Date</th> -->
+                        <!-- <th>Dispatched On</th> -->
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template if:true={hasDispatched}>
+                        <template for:each={dispatchedRows} for:item="o">
+                            <tr key={o.id}>
+                                <!-- <td><span class="code-chip">{o.code}</span></td> -->
+                                <td style="font-weight:500">{o.customer}</td>
+                                <td style="font-weight:500">{o.itemCode}</td>
+                                <td><span class={o.matClass}>{o.mat}</span></td>
+                                <td style="font-size:12px;font-weight:600;color:var(--gold)">{o.karDisplay}</td>
+                                <td style="font-weight:600">{o.qty}</td>
+                                <td style="font-weight:700;color:var(--green2)">{o.dispatchedQty}</td>
+                                <td>
+                                    <template if:true={o.hasLeftover}>
+                                        <span class="badge b-prod">{o.leftoverQty}</span>
+                                    </template>
+                                    <template if:false={o.hasLeftover}>
+                                        <span class="badge b-done">None</span>
+                                    </template>
+                                </td>
+                                <!-- <td style="font-size:12px;color:var(--muted)">{o.dueFormatted}</td> -->
+                                <!-- <td style="font-size:12px;color:var(--green2);font-weight:600">{o.dispatchDate}</td> -->
+                                <td><span class="badge b-done">Dispatched</span></td>
+                            </tr>
+                        </template>
+                    </template>
+                    <template if:false={hasDispatched}>
+                        <tr>
+                            <td colspan="10">
+                                <div class="empty">
+                                    <div class="empty-icon">🚚</div>
+                                    <div class="empty-t">No dispatches yet</div>
+                                    <div class="empty-s">Dispatched orders will appear here</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>
+</template>

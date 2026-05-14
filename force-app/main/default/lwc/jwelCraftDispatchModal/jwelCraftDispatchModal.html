@@ -1,0 +1,50 @@
+<template>
+    <div class="overlay on" onclick={handleOverlayClick}>
+        <div class="modal">
+            <div class="modal-hd">
+                <div>
+                    <div class="modal-title">🚚 Dispatch Order — {order.code}</div>
+                    <div class="modal-sub">Enter quantity to dispatch. Remaining goes to inventory bucket.</div>
+                </div>
+                <button class="modal-close" onclick={handleClose}>✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="disp-field">
+                    <div class="disp-label">Customer</div>
+                    <div class="cust-name">{order.customer}</div>
+                </div>
+                <div class="disp-field">
+                    <div class="disp-label">Order Details</div>
+                    <div class="order-details">
+                        <span class={matClass}>{order.mat}</span>
+                        <template if:true={order.kar}>&nbsp; {order.kar}</template>
+                        &nbsp; Size: {order.size}
+                    </div>
+                </div>
+                <div class="disp-field">
+                    <div class="disp-label">Dispatch Quantity</div>
+                    <div class="qty-row">
+                        <div>
+                            <div class="qty-info">Ordered: {order.qty} piece(s)</div>
+                            <div class="qty-meta">Enter how many to dispatch now</div>
+                        </div>
+                        <input type="number" class="qty-input" value={dispatchQty} min="1" max={order.qty} onchange={handleQtyChange}>
+                    </div>
+                    <template if:true={showLeftover}>
+                        <div class="leftover-info">
+                            📦 <strong>{leftoverQty}</strong> piece(s) will be added to the <strong>Inventory Bucket</strong> for future use
+                        </div>
+                    </template>
+                </div>
+                <div class="disp-field">
+                    <div class="disp-label">Dispatch Notes (optional)</div>
+                    <textarea class="fi2" value={notes} onchange={handleNotesChange} rows="2" style="resize:vertical" placeholder="Tracking number, delivery notes…"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-confirm" onclick={handleConfirm}>✅ Confirm Dispatch</button>
+                    <button class="btn-modal-cancel" onclick={handleClose}>Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

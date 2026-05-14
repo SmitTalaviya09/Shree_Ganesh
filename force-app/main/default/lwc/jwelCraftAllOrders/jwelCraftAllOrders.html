@@ -1,0 +1,270 @@
+<template>
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Register</div>
+            <div class="htitle">All Orders</div>
+            <div class="hsub">Complete order list — manage lifecycle stages</div>
+        </div>
+    </div>
+
+    <!-- FILTER RIBBON -->
+    <div class="fribbon">
+        <input class="fi fi-w" placeholder="🔍  Search code or customer…" value={searchTerm} onchange={handleSearch}>
+        <select class="fi" value={filterKarat} onchange={handleKaratFilter}>
+            <option value="">All Karats</option>
+            <option value="9 KT">9KT</option>
+            <option value="10">10KT</option>
+            <option value="14 KT">14KT</option>
+            <option value="18 KT">18KT</option>
+            <option value="22 KT">22Kt</option>
+        </select>
+        <select class="fi" value={filterMat} onchange={handleMatFilter}>
+            <option value="">All Materials</option>
+            <option value="Yellow Gold">Yellow Gold</option>
+            <option value="White Gold">White Gold</option>
+            <option value="Rose Gold">Rose Gold</option>
+        </select>
+        <select class="fi" value={filterStatus} onchange={handleStatusFilter}>
+            <option value="">All Status</option>
+            <option value="New">New</option>
+            <option value="Stock Check">Stock Check</option>
+            <option value="In Production">In Production</option>
+            <option value="Ready">Ready</option>
+            <option value="Dispatched">Dispatched</option>
+        </select>
+        <div class="fsep"></div>
+        <input type="date" class="fi" value={filterFrom} onchange={handleFromFilter} style="width:135px">
+        <input type="date" class="fi" value={filterTo} onchange={handleToFilter} style="width:135px">
+        <button class="btn-clr" onclick={clearFilters}>✕ Clear</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tbl-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <!-- <th><input type="checkbox" class="cb" onchange={handleSelectAll}></th> -->
+                    <th>Customer</th>
+                    <th>Item Code</th>
+                    <th>Material</th>
+                    <th>Karat</th>
+                    <!-- <th>Size</th> -->
+                    <th>Qty</th>
+                    <th>Order Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template if:true={hasFilteredOrders}>
+                    <template for:each={filteredOrders} for:item="o">
+                        <tr key={o.id}>
+                            <!-- <td><input type="checkbox" class="cb"></td> -->  
+                            <td style="font-weight:500">{o.customer}</td>
+                            <td><span class="code-chip">{o.itemCode}</span></td>
+                            <td><span class={o.matClass}>{o.mat}</span></td>
+                            <td style="font-size:12px;font-weight:600;color:var(--gold)">{o.karDisplay}</td>
+                            <!-- <td style="color:var(--muted)">{o.size}</td> -->
+                            <td style="font-weight:700">{o.qtyDisplay}</td>
+                            <td style="font-size:12px;color:var(--muted)">{o.dueFormatted}</td>
+                            <td style="font-size:12px;color:var(--muted)">{o.dueDateFormatted}</td>
+                            <td><span class={o.priClass}><span class="pd"></span>{o.pri}</span></td>
+                            <td><span class={o.badgeClass}>{o.status}</span></td>
+                            <!-- <td>
+                                <template if:true={o.showMoveToStock}>
+                                    <button class="act" title="Move to Stock Check" data-id={o.id} onclick={handleMoveToStock}>🔍</button>
+                                </template>
+                                <template if:true={o.showMarkReady}>
+                                    <button class="act" title="Mark Ready" data-id={o.id} onclick={handleMarkReady} style="color:var(--green2)">✅</button>
+                                </template>
+                                <template if:true={o.showDispatch}>
+                                    <button class="act" title="Dispatch" data-id={o.id} onclick={handleDispatch} style="color:var(--purple)">🚚</button>
+                                </template>
+                                <button class="act danger" title="Delete" data-id={o.id} onclick={handleDelete}>🗑️</button>
+                            </td> -->
+                            <td class="action-cell">
+                                <div class="menu-wrapper">
+                                    <button class="menu-btn" data-id={o.id} onclick={toggleMenu}>⋮</button>
+                                    <template if:true={o.showMenu}>
+                                        <div class="menu">
+                                            <div class="menu-item" data-id={o.id} onclick={handleEdit}>Edit</div>
+                                            <div class="menu-item delete" data-id={o.id} onclick={handleDeleteClick}>Delete</div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                    </template>
+                    
+                </template>
+                <template if:false={hasFilteredOrders}>
+                    <tr>
+                        <td colspan="11">
+                            <div class="empty">
+                                <div class="empty-icon">📋</div>
+                                <div class="empty-t">No orders found</div>
+                                <div class="empty-s">Try different filters</div>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+    <!-- EDIT MODAL -->
+    <template if:true={showEditModal}>
+        <div class="modal-back">
+            <div class="edit-modal">
+
+                <div class="edit-header">
+                    <h3>Edit Order</h3>
+                    <button class="edit-close" onclick={closeEdit}>✕</button>
+                </div>
+
+                <div class="edit-grid">
+
+                    <!-- ITEM CODE PICKLIST -->
+                    <div class="edit-field">
+                        <label>Item Code</label>
+
+                        <div class="row-pick-wrap">
+                            <div class="row-pick-trigger"
+                                onclick={handleItemPickFocus}>
+                                <span class={editItemCodeClass}>{editItemCodeLabel}</span>
+                                <span class="rpt-chevron">▾</span>
+                            </div>
+
+                            <template if:true={showItemPick}>
+                                <div class="row-pick-dropdown">
+
+                                    <input class="row-pick-search"
+                                        type="text"
+                                        placeholder="Search item..."
+                                        value={itemPickSearch}
+                                        oninput={handleItemPickSearch}/>
+
+                                    <div class="row-pick-list">
+
+                                        <template if:true={hasItemOptions}>
+                                            <template for:each={filteredItemCodes} for:item="opt">
+                                                <div key={opt}
+                                                    class="row-pick-option"
+                                                    data-value={opt}
+                                                    onclick={handleItemCodeSelect}>
+                                                    {opt}
+                                                </div>
+                                            </template>
+                                        </template>
+
+                                        <template if:false={hasItemOptions}>
+                                            <div class="row-pick-empty">No matches</div>
+                                        </template>
+
+                                    </div>
+
+                                </div>
+                            </template>
+
+                        </div>
+                    </div>
+
+                    <!-- MATERIAL -->
+                    <div class="edit-field">
+                        <label>Material</label>
+                        <select class="edit-input"
+                                onchange={handleMaterialChange}>
+                            <template for:each={editMaterialOptions} for:item="m">
+                                <option key={m.value}
+                                        value={m.value}
+                                        selected={m.selected}>
+                                    {m.label}
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- KARAT -->
+                    <div class="edit-field">
+                        <label>Karat</label>
+                        <select class="edit-input"
+                                value={editKarat}
+                                onchange={handleKaratChange}>
+                            <option value="9 KT">9 KT</option>
+                            <option value="10 KT">10 KT</option>
+                            <option value="14 KT">14 KT</option>
+                            <option value="18 KT">18 KT</option>
+                            <option value="22 KT">22 KT</option>
+                        </select>
+                    </div>
+                    <div class="edit-field">
+
+                        <!-- <select class="edit-input"
+                            value={editQtyUnit}
+                            onchange={handleQtyUnitChange}>
+
+                            <template for:each={allQtyUnits} for:item="u">
+                                <option key={u} value={u}>{u}</option>
+                            </template>
+
+                        </select> -->
+                        <div class="edit-field">
+    <label>Types</label>
+    <select class="edit-input"
+            onchange={handleQtyUnitChange}>
+        <template for:each={editQtyUnitOptions} for:item="u">
+            <option key={u.value} 
+                    value={u.value}
+                    selected={u.selected}>   <!-- ✅ selected attribute per option -->
+                {u.label}
+            </option>
+        </template>
+    </select>
+</div>
+                    </div>
+                    <!-- SIZE -->
+                    <div class="edit-field">
+                        <label>Size</label>
+                        <input class="edit-input"
+                            value={editSize}
+                            onchange={handleSizeChange}/>
+                    </div>
+
+                    <!-- QTY -->
+                    <div class="edit-field">
+                        <label>Quantity</label>
+                        <input type="number"
+                            class="edit-input"
+                            value={editQty}
+                            onchange={handleQtyChange}/>
+                    </div>
+
+                </div>
+
+                <div class="edit-actions">
+                    <button class="btn-save" onclick={saveEdit}>Save Changes</button>
+                    <button class="btn-cancel" onclick={closeEdit}>Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </template>
+
+
+    <!-- DELETE MODAL -->
+    <template if:true={showDeleteConfirm}>
+        <div class="modal-back">
+            <div class="modal-sm">
+                <h3>Delete Order?</h3>
+                <p>
+                    Are you sure you want to delete order for  
+                    <b> {selectedCustomer}</b> ?
+                </p>
+                <div class="modal-btns">
+                    <button class="btn-delete" onclick={confirmDelete}>Yes</button>
+                    <button class="btn-cancel" onclick={cancelDelete}>No</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>

@@ -1,0 +1,320 @@
+<template>
+    <div class="page">
+        <!-- HERO -->
+        <div class="hero">
+            <div class="hero-left">
+                <div class="eyebrow">Order Creator</div>
+                <div class="htitle">New Order Entry</div>
+            </div>
+        </div>
+
+        <!-- CUSTOMER PANEL -->
+        <div class="cust-panel">
+            <div class="cp-title"><span class="cp-icon">👤</span> Customer Details</div>
+            <div class="cp-fields">
+
+                <!-- Customer Code — searchable picklist -->
+                <!-- Client Name — searchable picklist -->
+                <div class="cf-group">
+                    <label class="cf-lbl">Client Name <span class="req">*</span></label>
+                    <div class="cf-search-wrap">
+                        <div class="pick-input-wrap" onclick={handleCustPickFocus}>
+                            <input class="cf-input pick-input"
+                                type="text"
+                                placeholder="Search client name…"
+                                value={custPickSearch}
+                                oninput={handleCustPickSearch}
+                                disabled={customerLocked}
+                                autocomplete="off" />
+                            <span class="pick-chevron">{custChevron}</span>
+                        </div>
+                        <template if:true={showCustPick}>
+                            <div class="pick-dropdown">
+                                <template if:true={hasCustOptions}>
+                                    <template for:each={filteredCustCodes} for:item="opt">
+                                        <div key={opt.id}
+                                            class="pick-option"
+                                            onmousedown={handleCustCodeSelect}
+                                            data-id={opt.id}>
+                                            {opt.name}
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={hasCustOptions}>
+                                    <div class="pick-empty">No matches</div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Customer Name -->
+                <!-- Customer Code -->
+                <div class="cf-group">
+                    <label class="cf-lbl">Customer Code</label>
+                    <input class="cf-input"
+                        type="text"
+                        value={customerCode}
+                        disabled />
+                </div>
+
+                <!-- Mobile -->
+                <div class="cf-group">
+                    <label class="cf-lbl">Mobile</label>
+                    <input class="cf-input"
+                        type="text"
+                        placeholder="Phone number"
+                        value={customerMobile}
+                        oninput={handleMobileInput} />
+                </div>
+
+                <!-- Locked chip -->
+                <template if:true={customerLocked}>
+                    <div class="cf-locked">
+                        <span class="lock-chip">🔒 {customerCode} · {customerName}</span>
+                        <button class="btn-change" onclick={handleChangeCustomer}>Change</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- ORDER LINES -->
+        <div class="order-section">
+            <div class="os-header">
+                <div class="os-title">
+                    Order Lines
+                    <span class="os-count">{orderLines.length} item(s)</span>
+                </div>
+                <button class="btn-add-line" onclick={handleAddLine}>＋ Add Line</button>
+            </div>
+
+            <!-- Column headers -->
+            <div class="ol-grid ol-head">
+                <div class="olh">#</div>
+                <!-- <div class="olh">Item Code *</div> -->
+                <div class="olh">Category / Item Code *</div>
+                <div class="olh">Size</div>
+                <div class="olh">Color</div>
+                <div class="olh">Karat</div>
+                <div class="olh">Qty *</div>
+                <!-- <div class="olh">Priority</div> -->
+                <!-- <div class="olh">Due Date</div> -->
+                <div class="olh">Remark</div>
+                <div class="olh"></div>
+            </div>
+
+            <template for:each={orderLines} for:item="line">
+                <div key={line.id} class="ol-grid ol-row">
+                    <div class="ol-num">{line.num}</div>
+
+                    <!-- Item Code — per-row searchable picklist -->
+                    <div class="ol-cell ol-pick-cell">
+                        <!-- Step 1: Category dropdown (per line) -->
+                        <!-- <select class="ol-input ol-cat-sel"
+                                data-id={line.id}
+                                data-field="category"
+                                onchange={handleLineCategoryChange}>
+                            <option value="">Category…</option>
+                            <template for:each={categoryOptions} for:item="cat">
+                                <option key={cat} value={cat}>{cat}</option>
+                            </template>
+                        </select> -->
+                        <!-- Category custom picklist (matches item code style) -->
+                        <div class="row-pick-wrap">
+                            <div class="row-pick-trigger"
+                                onclick={handleCatPickFocus}
+                                data-id={line.id}>
+                                <span class={line.catCodeClass}>{line.catLabel}</span>
+                                <span class="rpt-chevron">▾</span>
+                            </div>
+                            <template if:true={line.showCatPick}>
+                                <div class="row-pick-dropdown">
+                                    <input class="row-pick-search"
+                                        type="text"
+                                        placeholder="Search category…"
+                                        value={line.catSearch}
+                                        oninput={handleCatPickSearch}
+                                        data-id={line.id}
+                                        onclick={handleDropdownInputClick} />
+                                    <div class="row-pick-list">
+                                        <template if:true={line.hasCatOptions}>
+                                            <template for:each={line.filteredCatOptions} for:item="cat">
+                                                <div key={cat}
+                                                    class="row-pick-option"
+                                                    onmousedown={handleCatSelect}
+                                                    data-id={line.id}
+                                                    data-value={cat}>{cat}</div>
+                                            </template>
+                                        </template>
+                                        <template if:false={line.hasCatOptions}>
+                                            <div class="row-pick-empty">No matches</div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="row-pick-wrap">
+                            <div class="row-pick-trigger"
+                                 onclick={handleItemPickFocus}
+                                 data-id={line.id}>
+                                <span class={line.itemCodeClass}>{line.itemCodeLabel}</span>
+                                <span class="rpt-chevron">▾</span>
+                            </div>
+                            <template if:true={line.showItemPick}>
+                                <div class="row-pick-dropdown">
+                                    <input class="row-pick-search"
+                                        type="text"
+                                        placeholder="Search…"
+                                        value={line.itemPickSearch}
+                                        oninput={handleItemPickSearch}
+                                        data-id={line.id}
+                                        onclick={handleDropdownInputClick} />
+                                    <div class="row-pick-list">
+                                        <template if:true={line.hasItemOptions}>
+                                            <template for:each={line.filteredItemCodes} for:item="opt">
+                                                <div key={opt}
+                                                     class="row-pick-option"
+                                                     onmousedown={handleItemCodeSelect}
+                                                     data-id={line.id}
+                                                     data-value={opt}>{opt}</div>
+                                            </template>
+                                        </template>
+                                        <template if:false={line.hasItemOptions}>
+                                            <div class="row-pick-empty">No matches</div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="ol-cell">
+                        <div class="size-wrap">
+                            <input class="ol-input ol-short"
+                                type="text"
+                                placeholder="—"
+                                value={line.size}
+                                data-id={line.id}
+                                data-field="size"
+                                oninput={handleLineInput}
+                                onblur={handleSizeBlur}
+                                readonly={line.sizeIsAuto} />
+                            <template if:true={line.sizeIsAuto}>
+                                <span class="size-auto-badge" title="Auto from item config">⚙</span>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="ol-cell">
+                        <select class="ol-input" data-id={line.id} data-field="color" onchange={handleLineInput}>
+                            <option value="" disabled selected hidden>Choose color…</option>
+                            <option value="Yellow Gold">Yellow Gold</option>
+                            <option value="White Gold">White Gold</option>
+                            <option value="Rose Gold">Rose Gold</option>
+                            <option value="Silver">Silver</option>
+                        </select>
+                    </div>
+                    <!-- <div class="ol-cell">
+                        <input class="ol-input ol-short" type="number" placeholder="14"
+                            value={line.karat} data-id={line.id} data-field="karat"
+                            oninput={handleLineInput} min="1" max="24" />
+                    </div> -->
+                    <div class="ol-cell">
+                        <!-- <select class="ol-input ol-short" 
+                                data-id={line.id} 
+                                data-field="karat" 
+                                value={line.karat}
+                                onchange={handleLineInput}>
+                            <template for:each={line.karatOptions} for:item="k">
+                                <option key={k.value} value={k.value}>{k.label}</option>
+                            </template>
+                        </select> -->
+                        <select class="ol-input ol-short"
+                                data-id={line.id}
+                                data-field="karat"
+                                value={line.karat}
+                                onchange={handleLineInput}>
+                                <option value="" disabled selected hidden>Choose karat…</option>
+                            <template for:each={allKaratValues} for:item="k">
+                                <option key={k} value={k}>{k}</option>
+                            </template>
+                        </select>
+                    </div>
+                    <!-- <div class="ol-cell">
+                        <input class="ol-input ol-short" type="text" placeholder="—"
+                            value={line.size} data-id={line.id} data-field="size"
+                            oninput={handleLineInput} />
+                    </div> -->
+                    
+                    <!-- <div class="ol-cell">
+                        <input class="ol-input ol-short" type="number" placeholder="0"
+                            value={line.quantity} data-id={line.id} data-field="quantity"
+                            oninput={handleLineInput} min="1" />
+                    </div> -->
+                    <div class="ol-cell ol-qty-wrap">
+                        <div class="qty-group">
+                            <select class="ol-input ol-qty-unit" 
+                                    data-id={line.id} 
+                                    data-field="qtyUnit"
+                                    value={line.qtyUnit}
+                                    onchange={handleLineInput}>
+                                <option value="" disabled selected hidden>Unit…</option>
+                                <template for:each={allQtyUnits} for:item="u">
+                                    <option key={u} value={u}>{u}</option>
+                                </template>
+                            </select>
+                            <input class="ol-input ol-qty-num" 
+                                type="number" 
+                                placeholder="0"
+                                value={line.quantity} 
+                                data-id={line.id} 
+                                data-field="quantity"
+                                oninput={handleLineInput} 
+                                min="1"
+                                step={line.qtyStep} 
+                            />
+                        </div>
+                    </div>
+                    <!-- <div class="ol-cell">
+                        <select class="ol-input" data-id={line.id} data-field="priority" onchange={handleLineInput}>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div> -->
+                    <!-- <div class="ol-cell">
+                        <input class="ol-input ol-short" type="date"
+                            value={line.dueDate} data-id={line.id} data-field="dueDate"
+                            onchange={handleLineInput} />
+                    </div> -->
+                    <div class="ol-cell">
+                        <input class="ol-input" type="text" placeholder="Optional note"
+                            value={line.remark} data-id={line.id} data-field="remark"
+                            oninput={handleLineInput} />
+                    </div>
+                    <div class="ol-cell ol-del">
+                        <button class="btn-del-line" onclick={handleRemoveLine}
+                                data-id={line.id} title="Remove">✕</button>
+                    </div>
+                </div>
+            </template>
+
+            <template if:false={hasLines}>
+                <div class="ol-empty">No order lines yet — click "Add Line" above</div>
+            </template>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="form-footer">
+            <div class="ff-summary" if:true={hasLines}>
+                {orderLines.length} line(s) · Total qty: <strong>{totalQty}</strong> pcs
+            </div>
+            <div class="ff-actions">
+                <button class="btn-secondary" onclick={handleClear}>🗑 Clear All</button>
+                <button class="btn-primary" onclick={handleSubmit} disabled={isSubmitting}>
+                    <template if:false={isSubmitting}>✅ Place Orders</template>
+                    <template if:true={isSubmitting}>Saving…</template>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

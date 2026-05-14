@@ -1,0 +1,539 @@
+<template>
+<div class="page">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <div class="eyebrow">Stock Manager</div>
+            <div class="htitle">Allocate Stock</div>
+            <!-- <div class="hsub">Assign available inventory to pending orders</div> -->
+        </div>
+        <div class="hero-right">
+            <div class="hero-stat">
+                <span class="hs-val">{filteredCount}</span>
+                <span class="hs-lbl">Showing</span>
+            </div>
+            <div class="hero-stat hs-total">
+                <span class="hs-val">{totalCount}</span>
+                <span class="hs-lbl">Total Orders</span>
+            </div>
+            <button class="btn-refresh" onclick={handleRefresh} title="Refresh">↻</button>
+        </div>
+    </div>
+
+    <!-- FILTER RIBBON -->
+    <div class="fribbon">
+        <div class="fi-search-wrap">
+            <span class="fi-search-icon">🔍</span>
+            <input class="fi fi-search" type="search"
+                placeholder="Search order, customer, item code…"
+                value={searchTerm} oninput={handleSearch} />
+        </div>
+        <div class={stageFilterClass}>
+            <select class="fi" value={filterStage} onchange={handleStageFilter}>
+                <option value="">All Stages</option>
+                <template for:each={stageOptions} for:item="st">
+                    <option key={st} value={st}>{st}</option>
+                </template>
+            </select>
+            <template if:true={filterStage}>
+                <button class="fi-clear" onclick={handleClearStage}>✕</button>
+            </template>
+        </div>
+        <div class={categoryFilterClass}>
+            <select class="fi" value={filterCategory} onchange={handleCategoryFilter}>
+                <option value="">All Departments</option>
+                <template for:each={categoryOptions} for:item="cat">
+                    <option key={cat} value={cat}>{cat}</option>
+                </template>
+            </select>
+            <template if:true={filterCategory}>
+                <button class="fi-clear" onclick={handleClearCategory}>✕</button>
+            </template>
+        </div>
+        <div class={colorFilterClass}>
+            <select class="fi" value={filterColor} onchange={handleColorFilter}>
+                <option value="">All Colors</option>
+                <option value="Yellow Gold">Yellow Gold</option>
+                <option value="White Gold">White Gold</option>
+                <option value="Rose Gold">Rose Gold</option>
+                <option value="Silver">Silver</option>
+            </select>
+            <template if:true={filterColor}>
+                <button class="fi-clear" onclick={handleClearColor}>✕</button>
+            </template>
+        </div>
+        <div class={karatFilterClass}>
+            <select class="fi" value={filterKarat} onchange={handleKaratFilter}>
+                <option value="">All Karats</option>
+                <template for:each={allKaratValues} for:item="k">
+                    <option key={k} value={k}>{k}K</option>
+                </template>
+            </select>
+            <template if:true={filterKarat}>
+                <button class="fi-clear" onclick={handleClearKarat}>✕</button>
+            </template>
+        </div>
+        <div class="fi-date-pair">
+            <span class="fi-date-lbl">From</span>
+            <input type="date" class="fi fi-date" value={filterFrom} onchange={handleFromFilter} />
+        </div>
+        <div class="fi-date-pair">
+            <span class="fi-date-lbl">To</span>
+            <input type="date" class="fi fi-date" value={filterTo} onchange={handleToFilter} />
+        </div>
+        <template if:true={hasActiveFilters}>
+            <button class="btn-clear-all" onclick={clearFilters}>✕ Clear All</button>
+        </template>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tbl-outer">
+        <template if:true={isLoading}>
+            <div class="loading">⏳ Loading orders…</div>
+        </template>
+        <template if:false={isLoading}>
+            <template if:true={hasOrders}>
+
+                <div class="tbl-head">
+                    <div class="th">Customer</div>
+                    <div class="th">Item</div>
+                    <!-- <div class="th">Color · Karat</div> -->
+                    <div class="th">Karat · Color</div>
+                    <div class="th th-c">Total</div>
+                    <div class="th th-c">Fulfilled</div>
+                    <div class="th th-c">Pending</div>
+                    <div class="th th-c">In Stock</div>
+                    <div class="th">Stage</div>
+                    <div class="th">Date</div>
+                    <div class="th th-c">Action</div>
+                </div>
+
+                <div class="tbl-body">
+                    <template for:each={visibleOrders} for:item="o">
+                        <div key={o.id} class={o.rowClass}>
+                            <!-- <template if:true={o.dueBadge}>
+                                <div class={o.dueBadgeClass}>{o.dueBadge}</div>
+                            </template> -->
+                            <div class="td">
+                                <div class="td-cust">{o.customer}</div>
+                                <template if:true={o.customerCode}>
+                                    <div class="td-sub">{o.customerCode}</div>
+                                </template>
+                            </div>
+                            <!-- <div class="td td-item">{o.itemCode}</div> -->
+                            <div class="td td-item">
+                                <div class="item-main">{o.itemCode}</div>
+
+                                <template if:true={o.size}>
+                                    <div class="item-sub">
+                                        <span class="item-sub-lbl">Size:</span> {o.size}
+                                    </div>
+                                </template>
+
+                                <template if:true={o.remark}>
+                                    <div class="item-remark" title={o.remark}>
+                                        {o.remark}
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="td">
+                                <!-- <span class="tag-color">{o.color}</span> -->
+                                <template if:true={o.karat}>
+                                    <span class="tag-karat">{o.karat}</span>
+                                </template>
+                                <span class="tag-color">{o.color}</span>
+                            </div>
+                            <div class="td td-num">
+                                {o.total} <span class="td-unit">{o.unit}</span>
+                            </div>
+                            <div class="td td-num td-fulfilled">
+                                {o.fulfilled} <span class="td-unit">{o.unit}</span>
+                            </div>
+                            <div class="td td-num td-pending">
+                                {o.pending} <span class="td-unit">{o.unit}</span>
+                            </div>
+                            <div class="td td-stock">
+                                <span class={o.stockPillClass}>{o.stockDisplay}</span>
+                            </div>
+                            <div class="td">
+                                <span class={o.stageClass}>{o.stage}</span>
+                            </div>
+                            <div class="td td-date">{o.dueFormatted}</div>
+
+                            <!-- <div class="td td-action">
+                                <template if:true={o.hasPending}>
+                                    <div class="action-btns">
+                                        <button class="btn-allocate"
+                                            data-id={o.id}
+                                            onclick={handleAllocate}>+ Allocate</button>
+                                        <template if:true={o.isPartialReady}>
+                                            <button class="btn-move-ready"
+                                                data-id={o.id}
+                                                onclick={handleMoveToReady}
+                                                title="Move to Ready — accept partial fulfillment">
+                                                ✓ Ready
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:false={o.hasPending}>
+                                    <span class="done-chip">✓ Done</span>
+                                </template>
+                            </div> -->
+                            <div class="td td-action">
+    <template if:true={o.hasPending}>
+        <div class="action-menu-wrap">
+            <button class="btn-action-menu"
+                data-id={o.id}
+                onclick={handleActionMenuToggle}
+                title="More Actions">
+                ⋮
+            </button>
+            <template if:true={o.isActionMenuOpen}>
+                <div class="action-dropdown">
+                    ...
+                </div>
+            </template>
+
+            <template if:true={o.isActionMenuOpen}>
+                <div class="action-dropdown">
+                    <button class="action-dd-btn"
+                        data-id={o.id}
+                        onclick={handleAllocate}>
+                        + Allocate
+                    </button>
+
+                    <button class="action-dd-btn"
+                        data-id={o.code}
+                        onclick={handleSendToProduction}>
+                        Send to Production
+                    </button>
+
+                    <template if:true={o.isPartialReady}>
+                        <button class="action-dd-btn"
+                            data-id={o.id}
+                            onclick={handleMoveToReady}>
+                            ✓ Ready
+                        </button>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <template if:false={o.hasPending}>
+        <span class="done-chip">✓ Done</span>
+    </template>
+</div>
+                        </div>
+                    </template>
+                </div>
+
+                <template if:true={hasMore}>
+                    <div class="load-more-bar">
+                        <button class="btn-load-more" onclick={handleLoadMore}>
+                            Load {remainingCount} more orders ▾
+                        </button>
+                    </div>
+                </template>
+
+            </template>
+            <template if:false={hasOrders}>
+                <div class="empty-state">
+                    <div class="es-icon">📦</div>
+                    <div class="es-title">No pending orders</div>
+                    <div class="es-sub">
+                        <template if:true={hasActiveFilters}>Try adjusting your filters</template>
+                        <template if:false={hasActiveFilters}>All orders are fulfilled or dispatched</template>
+                    </div>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- ══ ALLOCATION MODAL ══ -->
+    <template if:true={showModal}>
+        <div class="modal-backdrop" onclick={handleCloseModal}></div>
+        <div class="modal">
+            <div class="modal-hdr">
+                <div>
+                    <div class="modal-eyebrow">Allocate Stock</div>
+                    <div class="modal-title">{confirmOrderCode}</div>
+                    <div class="modal-subtitle">{confirmItemCode}</div>
+                </div>
+                <button class="modal-close" onclick={handleCloseModal}>✕</button>
+            </div>
+            <!-- <div class="modal-body">
+                <div class="order-summary">
+                    <div class="os-item">
+                        <span class="os-lbl">Total</span>
+                        <span class="os-val">{activeOrder.total}</span>
+                    </div>
+                    <div class="os-sep">→</div>
+                    <div class="os-item">
+                        <span class="os-lbl">Fulfilled</span>
+                        <span class="os-val os-fulfilled">{activeOrder.fulfilled}</span>
+                    </div>
+                    <div class="os-sep">→</div>
+                    <div class="os-item os-item-pending">
+                        <span class="os-lbl">Pending</span>
+                        <span class="os-val os-pending">{activeOrder.pending}</span>
+                    </div>
+                    <div class="os-unit">{activeOrder.unit}</div>
+                </div>
+                <div class="avail-strip">
+                    <span class="avail-lbl">In Inventory</span>
+                    <template if:false={activeIsLW}>
+                        <span class="avail-val">{activeOrder.availQty} pcs</span>
+                    </template>
+                    <template if:true={activeIsLW}>
+                        <span class="avail-val">{activeOrder.availInches} in · {activeOrder.availGrams} g</span>
+                    </template>
+                </div>
+                <template if:false={activeIsLW}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">
+                            Quantity to allocate
+                            <span class="alloc-hint">(max: {activeOrder.pending} {activeOrder.unit})</span>
+                        </label>
+                        <input class="alloc-input" type="number"
+                            min="1" max={activeOrder.pending}
+                            placeholder="0" value={allocQty}
+                            oninput={handleAllocQtyInput} />
+                    </div>
+                </template>
+                <template if:true={activeIsLW}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Inches to allocate <span class="req">*</span></label>
+                        <input class="alloc-input" type="number" min="0" step="0.01"
+                            placeholder="0.00" value={allocInches}
+                            oninput={handleAllocInchesInput} />
+                    </div>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Grams to allocate <span class="req">*</span></label>
+                        <input class="alloc-input" type="number" min="0" step="0.001"
+                            placeholder="0.000" value={allocGrams}
+                            oninput={handleAllocGramsInput} />
+                    </div>
+                </template>
+                <template if:false={allocValid}>
+                    <div class="alloc-error">{allocError}</div>
+                </template>
+                <template if:true={activeOrder.remark}>
+                    <div class="alloc-remark">📝 {activeOrder.remark}</div>
+                </template>
+            </div> -->
+            <div class="modal-body">
+                <div class="order-summary">
+                    <div class="os-item">
+                        <span class="os-lbl">Total</span>
+                        <span class="os-val">{activeOrder.total}</span>
+                    </div>
+                    <div class="os-sep">→</div>
+                    <div class="os-item">
+                        <span class="os-lbl">Fulfilled</span>
+                        <span class="os-val os-fulfilled">{activeOrder.fulfilled}</span>
+                    </div>
+                    <div class="os-sep">→</div>
+                    <div class="os-item os-item-pending">
+                        <span class="os-lbl">Pending</span>
+                        <span class="os-val os-pending">{activeOrder.pending}</span>
+                    </div>
+                    <div class="os-unit">{activeOrder.unit}</div>
+                </div>
+
+                <!-- ✅ Stock available strip — per type -->
+                <div class="avail-strip">
+                    <span class="avail-lbl">In Inventory</span>
+                    <template if:true={activeIsQty}>
+                        <span class="avail-val">{activeOrder.availQty} pcs</span>
+                    </template>
+                    <template if:true={activeIsLW}>
+                        <span class="avail-val">{activeOrder.availInches} in · {activeOrder.availGrams} g</span>
+                    </template>
+                    <template if:true={activeIsPair}>
+                        <span class="avail-val">{activeOrder.availPair} Pair</span>
+                    </template>
+                    <template if:true={activeIsQP}>
+                        <span class="avail-val">{activeOrder.availQty} pcs · {activeOrder.availPair} Pair</span>
+                    </template>
+                    <template if:true={activeIsQW}>
+                        <span class="avail-val">{activeOrder.availQty} pcs · {activeOrder.availGrams} g</span>
+                    </template>
+                </div>
+
+                <!-- ✅ Quantity — Pieces only -->
+                <template if:true={activeIsQty}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">
+                            Quantity to allocate
+                            <span class="alloc-hint">(max: {activeOrder.pending} {activeOrder.unit})</span>
+                        </label>
+                        <input class="alloc-input" type="number"
+                            min="1" max={activeOrder.pending}
+                            placeholder="0" value={allocQty}
+                            oninput={handleAllocQtyInput} />
+                    </div>
+                </template>
+
+                <!-- ✅ LengthWeight — Inches + Grams -->
+                <template if:true={activeIsLW}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Inches to allocate <span class="req">*</span></label>
+                        <input class="alloc-input" type="number" min="0" step="0.01"
+                            placeholder="0.00" value={allocInches}
+                            oninput={handleAllocInchesInput} />
+                    </div>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Grams to allocate <span class="req">*</span></label>
+                        <input class="alloc-input" type="number" min="0" step="0.001"
+                            placeholder="0.000" value={allocGrams}
+                            oninput={handleAllocGramsInput} />
+                    </div>
+                </template>
+
+                <!-- ✅ Pair — Pair only -->
+                <template if:true={activeIsPair}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">
+                            Pair to allocate
+                            <span class="alloc-hint">(max: {activeOrder.pending} Pair)</span>
+                        </label>
+                        <input class="alloc-input" type="number"
+                            min="1" max={activeOrder.pending}
+                            placeholder="0" value={allocPair}
+                            oninput={handleAllocPairInput} />
+                    </div>
+                </template>
+
+                <!-- ✅ QuantityPair — Pieces + Pair -->
+                <template if:true={activeIsQP}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Pieces to allocate</label>
+                        <input class="alloc-input" type="number" min="0"
+                            placeholder="0" value={allocQty}
+                            oninput={handleAllocQtyInput} />
+                    </div>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Pair to allocate</label>
+                        <input class="alloc-input" type="number" min="0"
+                            placeholder="0" value={allocPair}
+                            oninput={handleAllocPairInput} />
+                    </div>
+                </template>
+
+                <!-- ✅ QuantityWeight — Pieces + Grams -->
+                <template if:true={activeIsQW}>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">
+                            Pieces to allocate
+                            <span class="alloc-hint">(max: {activeOrder.pending})</span>
+                        </label>
+                        <input class="alloc-input" type="number"
+                            min="1" max={activeOrder.pending}
+                            placeholder="0" value={allocQty}
+                            oninput={handleAllocQtyInput} />
+                    </div>
+                    <div class="alloc-field">
+                        <label class="alloc-lbl">Grams to allocate <span class="opt">(optional)</span></label>
+                        <input class="alloc-input" type="number" min="0" step="0.001"
+                            placeholder="0.000" value={allocGrams}
+                            oninput={handleAllocGramsInput} />
+                    </div>
+                </template>
+
+                <template if:false={allocValid}>
+                    <div class="alloc-error">{allocError}</div>
+                </template>
+                <template if:true={activeOrder.remark}>
+                    <div class="alloc-remark">📝 {activeOrder.remark}</div>
+                </template>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCloseModal}>Cancel</button>
+                <button class="btn-next" onclick={handleProceedToConfirm}>Review →</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ══ CONFIRM ALLOCATION MODAL ══ -->
+    <template if:true={showConfirm}>
+        <div class="modal-backdrop" onclick={handleCloseConfirm}></div>
+        <div class="modal modal-sm">
+            <div class="modal-hdr">
+                <div class="modal-title">⚠️ Confirm Allocation</div>
+                <button class="modal-close" onclick={handleCloseConfirm}>✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-block">
+                    <div class="cb-row">
+                        <span class="cb-lbl">Order</span>
+                        <span class="cb-val">{confirmOrderCode}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Item Code</span>
+                        <span class="cb-val">{confirmItemCode}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Allocating</span>
+                        <span class="cb-val cb-qty">{confirmQtyLabel}</span>
+                    </div>
+                    <template if:true={confirmWillBeReady}>
+                        <div class="cb-ready-note">✅ Order will move to <strong>Ready</strong> after this</div>
+                    </template>
+                    <template if:false={confirmWillBeReady}>
+                        <div class="cb-partial-note">🔀 Order will stay <strong>Partially Ready</strong> — remaining qty still pending</div>
+                    </template>
+                </div>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleBackToForm}>← Back</button>
+                <button class="btn-confirm" onclick={handleConfirmAllocate} disabled={isSaving}>
+                    <template if:false={isSaving}>✅ Confirm Allocation</template>
+                    <template if:true={isSaving}>Saving…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ══ MOVE TO READY CONFIRM MODAL ══ -->
+    <template if:true={showMoveReadyConfirm}>
+        <div class="modal-backdrop" onclick={handleCloseMoveReady}></div>
+        <div class="modal modal-sm">
+            <div class="modal-hdr">
+                <div class="modal-title">✓ Move to Ready</div>
+                <button class="modal-close" onclick={handleCloseMoveReady}>✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-block">
+                    <div class="cb-row">
+                        <span class="cb-lbl">Order</span>
+                        <span class="cb-val">{moveReadyOrderCode}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Fulfilled</span>
+                        <span class="cb-val">{moveReadyFulfilled} {moveReadyUnit}</span>
+                    </div>
+                    <div class="cb-row">
+                        <span class="cb-lbl">Pending (waived)</span>
+                        <span class="cb-val td-pending">{moveReadyPending} {moveReadyUnit}</span>
+                    </div>
+                    <div class="cb-partial-note">
+                        The remaining <strong>{moveReadyPending} {moveReadyUnit}</strong> will be waived.
+                        Order will move directly to <strong>Ready</strong>.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-ftr">
+                <button class="btn-cancel" onclick={handleCloseMoveReady}>Cancel</button>
+                <button class="btn-confirm" onclick={handleConfirmMoveReady} disabled={isMovingReady}>
+                    <template if:false={isMovingReady}>✓ Yes, Move to Ready</template>
+                    <template if:true={isMovingReady}>Moving…</template>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</div>
+</template>

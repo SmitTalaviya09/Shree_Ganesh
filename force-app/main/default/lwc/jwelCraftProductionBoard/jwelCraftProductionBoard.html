@@ -1,0 +1,431 @@
+<template>
+<div class="page">
+  <div class="hero">
+    <div class="hero-left">
+      <div class="eyebrow">Production Department</div>
+      <div class="htitle">Production Board</div>
+      <div class="hsub">Active production batches — mark complete to add to inventory</div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-stat"><span class="hs-val">{activeBatchCount}</span><span class="hs-lbl">Active Batches</span></div>
+      <div class="hero-stat"><span class="hs-val">{totalPcs}</span><span class="hs-lbl">Total Pcs</span></div>
+    </div>
+  </div>
+
+  <!-- SEARCH BAR -->
+  <div class="search-bar">
+    <div class="sb-search-wrap">
+      <span class="sb-search-icon">🔍</span>
+      <input class="sb-search-input" type="search"
+        placeholder="Search by batch name, slip title or item code…"
+        value={searchTerm}
+        oninput={handleSearch} />
+      <template if:true={searchTerm}>
+        <button class="sb-clear" onclick={handleClearSearch} title="Clear">✕</button>
+      </template>
+    </div>
+    <span class="sb-count">{filteredBatches.length} / {activeBatchCount} batch(es)</span>
+  </div>
+
+  <div class="board-wrap">
+    <template if:true={isLoading}><div class="loading">⏳ Loading batches…</div></template>
+    <template if:false={isLoading}>
+      <template if:true={hasBatches}>
+        <template for:each={filteredBatches} for:item="batch">
+          <div key={batch.Id} class="batch-card">
+
+            <!-- HEADER ROW -->
+            <div class="bc-header">
+              <!-- <div class="bc-badge">{batch.Name}</div> -->
+              <div class="bc-item">
+                <div class="bci-code">{batch.slipTitle}</div>
+                <!-- <div class="bci-meta">{batch.Color__c} · {batch.Karat__c}</div> -->
+                <div class="bci-meta">{batch.Name}</div>
+              </div>
+
+              <!-- Item code chips -->
+              <div class="bc-item-chips">
+                <template for:each={batch.itemCodeList} for:item="ic">
+                  <span key={ic} class="ic-chip">{ic}</span>
+                </template>
+              </div>
+
+              <!-- Total qty -->
+              <div class="bc-qty-strip">
+                <!-- <div class="bqs-item bqs-total">
+                  <span class="bqs-val">{batch.Total_Qty__c}</span>
+                  <span class="bqs-lbl">Total Pcs</span>
+                </div> -->
+                <div class="production-qty-list">
+                    <template for:each={batch.productionQtyList} for:item="pq">
+                        <div key={pq.key} class="production-qty-chip">
+                            <span class="pq-code">{pq.itemCode}</span>
+                            <template if:true={pq.size}>
+                                <span class="pq-size">{pq.size}</span>
+                            </template>
+                            <span class="pq-arrow">→</span>
+                            <span class="pq-qty">{pq.qty} {pq.unit}</span>
+                        </div>
+                    </template>
+                </div>
+              </div>
+
+              <div class="bc-header-actions">
+                <div class="bc-date">{batch.createdFormatted}</div>
+                <button class="btn-toggle-orders"
+                        data-id={batch.Id}
+                        onclick={handleToggleOrders}>{batch.toggleLabel}</button>
+                <button class="btn-revert"
+                        data-id={batch.Id}
+                        onclick={handleOpenRevert}>
+                    ↩ Revert
+                </button>
+                <button class="btn-complete"
+                        data-id={batch.Id}
+                        onclick={handleOpenComplete}>✅ Complete</button>
+              </div>
+              <button class="btn-delete"
+                      data-id={batch.Id}
+                      onclick={handleDeleteBatchDirect}>
+                  🗑 Delete
+              </button>
+            </div>
+             <template if:true={showDeleteConfirmModal}>
+                <div class="modal-backdrop" onclick={handleCloseDeleteConfirm}></div>
+                <div class="modal modal-sm">
+                    <div class="modal-header">
+                        <div>
+                            <div class="modal-eyebrow">Confirm Delete</div>
+                            <div class="modal-title">Delete Remaining Batch</div>
+                        </div>
+                        <button class="modal-close" onclick={handleCloseDeleteConfirm}>✕</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="confirm-msg">
+                            This will delete the remaining production batch only. It will not add remaining quantity to inventory.
+                        </p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-cancel" onclick={handleCloseDeleteConfirm}>Cancel</button>
+                        <button class="btn-delete-batch" onclick={handleDeleteRemainingBatch} disabled={isCompleting}>
+                            Delete Batch
+                        </button>
+                    </div>
+                </div>
+            </template>
+            <template if:true={showRevertConfirmModal}>
+              <div class="modal-backdrop" onclick={handleCloseRevertConfirm}></div>
+              <div class="modal modal-sm">
+                  <div class="modal-header">
+                      <div>
+                          <div class="modal-eyebrow">Confirm Revert</div>
+                          <div class="modal-title">{revertBatchTitle}</div>
+                      </div>
+                      <button class="modal-close" onclick={handleCloseRevertConfirm}>✕</button>
+                  </div>
+
+                  <div class="modal-body">
+                      <p class="modal-intro">
+                          This will delete the production batch and move all related orders back to Bag Generate.
+                      </p>
+                  </div>
+
+                  <div class="modal-footer">
+                      <button class="btn-cancel" onclick={handleCloseRevertConfirm}>Cancel</button>
+                      <button class="btn-danger" onclick={handleConfirmRevert} disabled={isReverting}>
+                          <template if:false={isReverting}>Revert Batch</template>
+                          <template if:true={isReverting}>Reverting…</template>
+                      </button>
+                  </div>
+              </div>
+          </template>
+            <!-- COLLAPSIBLE ORDER LIST -->
+            <template if:true={batch.showOrders}>
+              <div class="bc-order-list">
+                <div class="bc-orders-hdr">
+                  <span>Item Code</span>
+                  <span>Customer Code</span>
+                  <span>Remark</span>
+                  <span style="text-align:ight">Qty</span>
+                </div>
+                <template for:each={batch.orderList} for:item="o">
+                  <div key={o.id} class="bc-order-row">
+                    <span class="bor-id">{o.itemCode}</span>
+                    <span class="bor-ccode">{o.customerCodeLabel}</span>
+                    <span class="bor-remark">{o.remark}</span>
+                    <span class="bor-qty">{o.qty} {o.unit}</span>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+          </div>
+        </template>
+      </template>
+      <template if:false={hasBatches}>
+        <div class="empty-state">
+          <div class="es-icon">🏭</div>
+          <div class="es-title">No active production batches</div>
+          <div class="es-sub">Batches sent from the Bag Generate will appear here</div>
+        </div>
+      </template>
+    </template>
+  </div>
+
+  <!-- ══ COMPLETION ENTRY MODAL ══ -->
+  <template if:true={showCompleteModal}>
+    <div class="modal-backdrop" onclick={handleCloseComplete}></div>
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-eyebrow">Mark Complete</div>
+          <div class="modal-title">{activeBatchTitle}</div>
+        </div>
+        <button class="modal-close" onclick={handleCloseComplete}>✕</button>
+      </div>
+      <!-- <div class="modal-body">
+        <p class="modal-intro">Enter the produced quantity for each item to add to inventory:</p>
+        <template for:each={completionItems} for:item="ci">
+          <div key={ci.itemCode} class={ci.rowClass}>
+            <div class="ci-item-code">{ci.itemCode}</div>
+            <div class="ci-measure-type">{ci.measureLabel}</div>
+
+            <template if:true={ci.isQty}>
+              <div class="ci-fields">
+                <div class="ci-field-group">
+                  <label class="ci-lbl">Pieces <span class="req">*</span></label>
+                  <input class="ci-input" type="number" min="0" placeholder="0"
+                    value={ci.qty} data-key={ci.rowKey} oninput={handleQtyInput} />
+                </div>
+              </div>
+            </template>
+
+            <template if:true={ci.isLW}>
+              <div class="ci-fields ci-fields-lw">
+                <div class="ci-field-group">
+                  <label class="ci-lbl">Inches <span class="req">*</span></label>
+                  <input class="ci-input" type="number" min="0" step="0.01" placeholder="0.00"
+                    value={ci.inches} data-key={ci.rowKey} oninput={handleInchesInput} />
+                </div>
+                <div class="ci-field-group">
+                  <label class="ci-lbl">Grams <span class="req">*</span></label>
+                  <input class="ci-input" type="number" min="0" step="0.001" placeholder="0.000"
+                    value={ci.grams} data-key={ci.rowKey} oninput={handleGramsInput} />
+                </div>
+              </div>
+            </template>
+
+            <template if:false={ci.valid}>
+              <div class="ci-error">Please enter a valid quantity</div>
+            </template>
+          </div>
+        </template>
+      </div> -->
+      <div class="modal-body">
+    <p class="modal-intro">Enter the produced quantity for each item to add to inventory:</p>
+    <template for:each={completionItems} for:item="ci">
+        <div key={ci.rowKey} class={ci.rowClass}>
+            <div class="ci-item-code">{ci.itemCode}</div>
+            <div class="ci-measure-type">{ci.measureLabel}</div>
+
+            <!-- Quantity → Pieces only -->
+            <template if:true={ci.isQty}>
+                <div class="ci-fields">
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Pieces <span class="req">*</span></label>
+                        <input class="ci-input" type="number" min="0" placeholder="0"
+                            value={ci.qty} data-key={ci.rowKey} oninput={handleQtyInput} />
+                    </div>
+                </div>
+            </template>
+
+            <!-- LengthWeight → Inches + Grams -->
+            <template if:true={ci.isLW}>
+                <div class="ci-fields ci-fields-lw">
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Inches <span class="req">*</span></label>
+                        <input class="ci-input" type="number" min="0" step="0.01" placeholder="0.00"
+                            value={ci.inches} data-key={ci.rowKey} oninput={handleInchesInput} />
+                    </div>
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Grams <span class="req">*</span></label>
+                        <input class="ci-input" type="number" min="0" step="0.001" placeholder="0.000"
+                            value={ci.grams} data-key={ci.rowKey} oninput={handleGramsInput} />
+                    </div>
+                </div>
+            </template>
+
+            <!-- Pair → Pair only -->
+            <template if:true={ci.isPair}>
+              <div class="ci-fields">
+                  <div class="ci-field-group">
+                      <label class="ci-lbl">Pair <span class="req">*</span></label>
+                      <input class="ci-input" type="number" min="0" placeholder="0"
+                          value={ci.pair} data-key={ci.rowKey} oninput={handlePairInput} />
+                  </div>
+              </div>
+          </template>
+          <!-- Weight → Grams only -->
+          <template if:true={ci.isWeight}>
+              <div class="ci-fields">
+                  <div class="ci-field-group">
+                      <label class="ci-lbl">Grams <span class="req">*</span></label>
+                      <input class="ci-input"
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            placeholder="0.000"
+                            value={ci.grams}
+                            data-key={ci.rowKey}
+                            oninput={handleGramsInput} />
+                  </div>
+              </div>
+          </template>   
+            <!-- LengthQuantity → Inches + Pieces -->
+            <template if:true={ci.isLQ}>
+                <div class="ci-fields ci-fields-lw">
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Inches <span class="req">*</span></label>
+                        <input class="ci-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={ci.inches}
+                              data-key={ci.rowKey}
+                              oninput={handleInchesInput} />
+                    </div>
+
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Pieces <span class="req">*</span></label>
+                        <input class="ci-input"
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              value={ci.qty}
+                              data-key={ci.rowKey}
+                              oninput={handleQtyInput} />
+                    </div>
+                </div>
+            </template>
+            <!-- QuantityPair → Pieces + Pair -->
+            <template if:true={ci.isQP}>
+                <div class="ci-fields ci-fields-lw">
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Pieces</label>
+                        <input class="ci-input" type="number" min="0" placeholder="0"
+                            value={ci.qty} data-key={ci.rowKey} oninput={handleQtyInput} />
+                    </div>
+                    <div class="ci-field-group">
+                        <label class="ci-lbl">Pair</label>
+                        <input class="ci-input" type="number" min="0" placeholder="0"
+                            value={ci.pair} data-key={ci.rowKey} oninput={handlePairInput} />
+                    </div>
+                </div>
+            </template>
+
+            <!-- QuantityWeight → Pieces + Grams -->
+            <template if:true={ci.isQW}>
+              <div class="ci-fields ci-fields-lw">
+                  <div class="ci-field-group">
+                      <label class="ci-lbl">Pieces <span class="req">*</span></label>
+                      <input class="ci-input" type="number" min="0" placeholder="0"
+                          value={ci.qty} data-key={ci.rowKey} oninput={handleQtyInput} />
+                  </div>
+                  <div class="ci-field-group">
+                      <label class="ci-lbl">Grams</label>
+                      <input class="ci-input" type="number" min="0" step="0.001" placeholder="0.000"
+                          value={ci.grams} data-key={ci.rowKey} oninput={handleGramsInput} />
+                  </div>
+              </div>
+          </template>
+            <div class="remaining-text">
+                Remaining: {ci.remainingLabel}
+            </div>
+            <template if:false={ci.valid}>
+                <div class="ci-error">Please enter a valid quantity</div>
+            </template>
+        </div>
+    </template>
+</div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick={handleCloseComplete}>Cancel</button>
+        <button class="btn-next" onclick={handleProceedToConfirm}>Review →</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- ══ CONFIRMATION MODAL ══ -->
+  <template if:true={showConfirmModal}>
+    <div class="modal-backdrop" onclick={handleCloseConfirm}></div>
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">⚠️ Confirm Completion</div>
+        <button class="modal-close" onclick={handleCloseConfirm}>✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-msg">
+          Marking <strong>{activeBatchTitle}</strong> as complete will add the following to inventory:
+        </p>
+        <!-- <div class="confirm-summary">
+          <template for:each={completionItems} for:item="ci">
+            <div key={ci.itemCode} class="cs-row">
+              <span class="cs-item">{ci.itemCode}</span>
+              <template if:true={ci.isQty}>
+                <span class="cs-val">{ci.qty} pcs</span>
+              </template>
+              <template if:true={ci.isLW}>
+                <span class="cs-val">{ci.inches} in · {ci.grams} g</span>
+              </template>
+            </div>
+          </template>
+        </div> -->
+        <div class="confirm-summary">
+    <template for:each={completionItems} for:item="ci">
+        <div key={ci.rowKey} class="cs-row">
+            <span class="cs-item">{ci.itemCode}</span>
+            <!-- Quantity -->
+            <template if:true={ci.isQty}>
+                <span class="cs-val">{ci.qty} pcs</span>
+            </template>
+            <!-- LengthWeight -->
+            <template if:true={ci.isLW}>
+                <span class="cs-val">{ci.inches} in · {ci.grams} g</span>
+            </template>
+            <!-- Pair -->
+            <template if:true={ci.isPair}>
+                <span class="cs-val">{ci.pair} Pair</span>
+            </template>
+            <!-- QuantityPair -->
+            <template if:true={ci.isQP}>
+                <span class="cs-val">{ci.qty} pcs · {ci.pair} Pair</span>
+            </template>
+            <!-- QuantityWeight -->
+            <template if:true={ci.isQW}>
+                <span class="cs-val">{ci.qty} pcs · {ci.grams} g</span>
+            </template>
+            <template if:true={ci.isWeight}>
+                <span class="cs-val">{ci.grams} g</span>
+            </template>
+            <template if:true={ci.isLQ}>
+                <span class="cs-val">{ci.inches} in · {ci.qty} pcs</span>
+            </template>
+        </div>
+    </template>
+</div>
+        <p class="confirm-note">This cannot be undone. The batch record will be deleted.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick={handleBackToForm}>← Back</button>
+        <button class="btn-danger" onclick={handleConfirmComplete} disabled={isCompleting}>
+          <template if:false={isCompleting}>✅ Confirm &amp; Complete</template>
+          <template if:true={isCompleting}>Completing…</template>
+        </button>
+      </div>
+    </div>
+  </template>
+
+</div>
+</template>
