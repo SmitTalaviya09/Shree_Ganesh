@@ -145,6 +145,24 @@ export default class JwelCraftProductionBoard extends LightningElement {
             })
             .catch(function() { self.isLoading = false; });
     }
+
+    handlePrintSlip(e) {
+        const batchId = e.currentTarget.dataset.id;
+        const title = e.currentTarget.dataset.title || '';
+
+        if (!batchId) {
+            this._toast('❌', 'Error', 'Batch Id not found');
+            return;
+        }
+
+        const vfUrl =
+            '/apex/JwelCraftProductionSlip?batchId=' +
+            encodeURIComponent(batchId) +
+            '&title=' +
+            encodeURIComponent(title);
+
+        window.open(vfUrl, '_blank');
+    }
     handleDeleteRemainingBatch() {
         if (!this.deleteBatch) return;
 

@@ -235,6 +235,22 @@
     color:#fff;
     border-color:#d97706;
 }
+.btn-print-slip {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #fef3c7;
+    color: #8a5a00;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-print-slip:hover {
+    background: #facc15;
+    color: #1c1408;
+}
 @media(max-width:768px){
   .hero{padding:12px 14px}
   .board-wrap{padding:8px 10px 20px}

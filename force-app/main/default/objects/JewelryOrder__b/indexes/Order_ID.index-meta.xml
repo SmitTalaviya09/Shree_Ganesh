@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Index xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Order_ID</fullName>
+    <fields>
+        <name>Order_ID__c</name>
+        <sortDirection>ASC</sortDirection>
+    </fields>
+    <label>Order ID</label>
+</Index>

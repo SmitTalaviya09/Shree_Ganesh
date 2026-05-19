@@ -691,8 +691,9 @@ public static Map<String, String> createProductionBatch(
                     (measureType == 'LengthQuantity' && (enteredInch > 0 || enteredQty > 0)) ||
                     (measureType == 'Weight' && enteredGram > 0)
                 ) {
-                    String invKey = makeInventoryKey(ic, batch.Color__c, batch.Karat__c, size);
-    
+                    // String invKey = makeInventoryKey(ic, batch.Color__c, batch.Karat__c, size);
+                    String cleanSizeVal = cleanSize(size);
+                    String invKey = makeInventoryKey(ic, batch.Color__c, batch.Karat__c, cleanSizeVal);
                     Inventory__c inv = null;
                     Boolean isNew = false;
     
@@ -707,7 +708,8 @@ public static Map<String, String> createProductionBatch(
                             Item_Code__c        = ic,
                             Color__c            = batch.Color__c,
                             Karat__c            = batch.Karat__c,
-                            Size__c             = String.isNotBlank(size) ? size : null,
+                            // Size__c             = String.isNotBlank(size) ? size : null,
+                            Size__c = cleanSizeVal,
                             Available_Qty__c    = 0,
                             Available_Inches__c = 0,
                             Available_Grams__c  = 0,
@@ -814,13 +816,24 @@ public static Map<String, String> createProductionBatch(
         return val == null ? 0 : val;
     }
 
+    // private static String makeInventoryKey(String itemCode, String color, String karat, String sizeVal) {
+    //     String safeSize = String.isNotBlank(sizeVal) ? sizeVal.trim() : '';
+    //     return String.valueOf(itemCode).trim()
+    //         + '|' + String.valueOf(color).trim()
+    //         + '|' + String.valueOf(karat).trim()
+    //         + '|' + safeSize;
+    // }
     private static String makeInventoryKey(String itemCode, String color, String karat, String sizeVal) {
-        String safeSize = String.isNotBlank(sizeVal) ? sizeVal.trim() : '';
-        return String.valueOf(itemCode).trim()
-            + '|' + String.valueOf(color).trim()
-            + '|' + String.valueOf(karat).trim()
-            + '|' + safeSize;
+        String safeItem  = String.isBlank(itemCode) ? '' : itemCode.trim().toLowerCase();
+        String safeColor = String.isBlank(color)    ? '' : color.trim().toLowerCase();
+        String safeKarat = String.isBlank(karat)    ? '' : karat.trim().toLowerCase();
+
+        String cleanedSize = cleanSize(sizeVal);
+        String safeSize = String.isBlank(cleanedSize) ? '' : cleanedSize.trim().toLowerCase();
+
+        return safeItem + '|' + safeColor + '|' + safeKarat + '|' + safeSize;
     }
+
     // ════════════════════════════════════════════════════════════
     // DELETE REMAINING BATCH — unchanged
     // ════════════════════════════════════════════════════════════
@@ -2133,5 +2146,21 @@ public static Map<String, String> createProductionBatch(
         } catch (Exception e) {
             throw new AuraHandledException('deleteAnyOrderRecord: ' + e.getMessage());
         }
+    }
+    private static String cleanSize(String sizeVal) {
+        if (String.isBlank(sizeVal)) return null;
+
+        String s = sizeVal.trim();
+
+        if (
+            s == '-' ||
+            s == '—' ||
+            s == '–' ||
+            s == '--'
+        ) {
+            return null;
+        }
+
+        return s;
     }
 }

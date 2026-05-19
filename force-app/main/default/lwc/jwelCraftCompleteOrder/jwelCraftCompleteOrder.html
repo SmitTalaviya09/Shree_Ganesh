@@ -6,7 +6,32 @@
             <div class="hsub">All delivered orders with dispatch details</div>
         </div>
     </div>
+    
+    <div class="fribbon">
+        <input
+            class="fi fi-w"
+            type="search"
+            placeholder="Search customer / item code..."
+            value={searchKey}
+            oninput={handleSearch}
+        />
 
+        <select class="fi" value={colorFilter} onchange={handleColorFilter}>
+            <option value="">All Colors</option>
+            <template for:each={colorOptions} for:item="c">
+                <option key={c} value={c}>{c}</option>
+            </template>
+        </select>
+
+        <select class="fi" value={karatFilter} onchange={handleKaratFilter}>
+            <option value="">All Karat</option>
+            <template for:each={karatOptions} for:item="k">
+                <option key={k} value={k}>{k}</option>
+            </template>
+        </select>
+
+        <button class="btn-clr" onclick={clearFilters}>Clear</button>
+    </div>
     <div class="tbl-wrap" style="padding-top:20px">
         <template if:true={isLoading}>
             <div class="loading">⏳ Loading dispatched orders…</div>

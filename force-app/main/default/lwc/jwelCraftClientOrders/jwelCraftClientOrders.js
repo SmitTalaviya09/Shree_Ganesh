@@ -16,6 +16,7 @@ export default class JwelCraftClientOrders extends LightningElement {
     @track acceptEditSize   = '';
     @track acceptEditRemark = '';
     @track isAccepting      = false;
+    @track acceptSizeChangedByUser = false;
 
     // Reject
     @track showRejectModal  = false;
@@ -105,6 +106,7 @@ export default class JwelCraftClientOrders extends LightningElement {
         this.acceptTarget     = order;
         this.acceptEditSize   = order.size   || '';
         this.acceptEditRemark = order.remark || '';
+        this.acceptSizeChangedByUser = false;
         this.showAcceptModal  = true;
     }
 
@@ -115,7 +117,7 @@ export default class JwelCraftClientOrders extends LightningElement {
         this.acceptEditRemark = '';
     }
 
-    handleAcceptSizeInput(e)   { this.acceptEditSize   = e.target.value; }
+    handleAcceptSizeInput(e)   { this.acceptEditSize   = e.target.value; this.acceptSizeChangedByUser = false;}
     handleAcceptRemarkInput(e) { this.acceptEditRemark = e.target.value; }
 
     handleConfirmAccept() {
@@ -123,7 +125,7 @@ export default class JwelCraftClientOrders extends LightningElement {
 
         // Size validation
         var size = (this.acceptEditSize || '').trim();
-        if (size && !this.isValidManualSize(size)) {
+        if (this.acceptSizeChangedByUser && size && !this.isValidManualSize(size)) {
             this._toast('❌', 'Invalid Size Format', 'Allowed: 5.0 mm, 5.1 mm, 21.0 mm');
             return;
         }

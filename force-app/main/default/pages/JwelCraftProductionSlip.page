@@ -147,7 +147,7 @@ html, body {
 }
 
 .row-remark {
-    font-size: 10.5pt;
+    font-size: 12.5pt;
     color: #000;
     font-weight: 700;
     margin-top: 2mm;
@@ -322,9 +322,9 @@ html, body {
                         </td>
                         <td class="col-cust">
                             <span class="reg-label">Regular</span>
-                             <!--<apex:outputPanel rendered="{!g.hasRegularRemark}">
-                                <div class="row-remark">↳ {!g.regularRemark}</div>
-                            </apex:outputPanel>-->
+                             <apex:outputPanel rendered="{!g.hasRegularRemark}">
+                                <div class="row-remark">{!g.regularRemark}</div>
+                            </apex:outputPanel>
                         </td>
                         <td class="col-qty">
                             <span class="qty-num">{!g.regularQty}</span>

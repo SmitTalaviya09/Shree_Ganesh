@@ -83,6 +83,12 @@
                 <button class="btn-complete"
                         data-id={batch.Id}
                         onclick={handleOpenComplete}>✅ Complete</button>
+                <button class="btn-print-slip"
+                        data-id={batch.Id}
+                        data-title={batch.slipTitle}
+                        onclick={handlePrintSlip}>
+                    🖨 Print Slip
+                </button>
               </div>
               <button class="btn-delete"
                       data-id={batch.Id}
