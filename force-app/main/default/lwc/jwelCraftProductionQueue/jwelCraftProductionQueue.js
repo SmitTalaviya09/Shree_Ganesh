@@ -1088,6 +1088,7 @@ export default class JwelCraftProductionQueue extends LightningElement {
     _unitForType(mType) {
         if (mType === 'LengthWeight')   return 'g/in';
         if (mType === 'Pair')           return 'Pair';
+        if (mType === 'Weight')          return 'g';
         // if (mType === 'QuantityPair')   return 'pcs+Pair';
         // if (mType === 'QuantityWeight') return 'pcs+g';
         return 'Pcs'; // Quantity default

@@ -135,7 +135,7 @@ export default class JwelCraftCompleteOrder extends LightningElement {
     }
 
     get dispatchedRows() {
-        return [...this.filteredDispatched].reverse().map(o => ({
+        return [...this.filteredDispatched].map(o => ({
             ...o,
             karDisplay: o.kar || '—',
             dueFormatted: formatDate(o.due),

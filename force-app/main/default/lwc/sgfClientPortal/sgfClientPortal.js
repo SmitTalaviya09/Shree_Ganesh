@@ -8,6 +8,7 @@ import getClientItemCodesByCategory from '@salesforce/apex/SGFClientPortalContro
 import getClientItemSizeMap         from '@salesforce/apex/SGFClientPortalController.getClientItemSizeMap';
 import shreeganesh_Logo from '@salesforce/resourceUrl/shreeganesh_Logo';
 import CATALOGUE_PDF from '@salesforce/resourceUrl/SGFCatalogue';
+import getCompletedOrders from '@salesforce/apex/SGFClientPortalController.getCompletedOrders';
 
 var UNIT_MAP = {
     'Quantity':       ['Pieces'],
@@ -38,6 +39,13 @@ var COLOR_OPTIONS = [
 ];
 var SESSION_KEY = 'sgf_client_portal_session';
 var SESSION_HOURS = 12;
+var COMPLETED_ORDER_DAYS_BACK = 10;
+var DAY_FILTER_OPTIONS = [
+    { label: 'Today', value: '0' },
+    { label: 'Last 3 Days', value: '3' },
+    { label: 'Last 7 Days', value: '7' },
+    { label: 'Last 10 Days', value: '10' }
+];
 
 export default class SgfClientPortal extends LightningElement {
 
@@ -85,6 +93,12 @@ export default class SgfClientPortal extends LightningElement {
     allItemCategoryMap = {};   // { 'Rings': ['RING-001', ...], ... }
     allItemSizeMap     = {};   // { 'RING-001': '7', ... }
     @track categoryOptions = [];
+    @track completedOrders = [];
+    @track completedOrdersLoading = false;
+    @track completedSearchItem = '';
+    @track completedFilterDay = '10';
+    @track completedFilterKarat = '';
+    @track completedFilterColor = '';
 
     // ════════════ SCREEN GETTERS ════════════
     get isLoginScreen()     { return this.screen === 'login'; }
@@ -110,6 +124,58 @@ export default class SgfClientPortal extends LightningElement {
     // Color options exposed to template (static)
     get colorOptions() {
         return COLOR_OPTIONS;
+    }
+    get isTabCompleted() { return this.activeTab === 'completed'; }
+
+    get tabCompletedClass() {
+        return 'tab-btn' + (this.activeTab === 'completed' ? ' tab-active' : '');
+    }
+
+    get hasCompletedOrders() {
+        return this.filteredCompletedOrders.length > 0;
+    }
+
+    get completedDayOptions() {
+        return DAY_FILTER_OPTIONS;
+    }
+
+    get completedColorOptions() {
+        var map = {};
+        this.completedOrders.forEach(function(o) {
+            if (o.color && o.color !== '—') map[o.color] = true;
+        });
+
+        return Object.keys(map).sort().map(function(c) {
+            return { label: c, value: c };
+        });
+    }
+
+    get completedKaratOptions() {
+        var map = {};
+        this.completedOrders.forEach(function(o) {
+            if (o.karat && o.karat !== '—') map[o.karat] = true;
+        });
+
+        return Object.keys(map).sort().map(function(k) {
+            return { label: k, value: k };
+        });
+    }
+
+    get filteredCompletedOrders() {
+        var item = (this.completedSearchItem || '').toLowerCase();
+        var karat = this.completedFilterKarat;
+        var color = this.completedFilterColor;
+
+        return this.completedOrders.filter(function(o) {
+            var okItem = !item ||
+                (o.itemCode || '').toLowerCase().includes(item) ||
+                (o.orderId || '').toLowerCase().includes(item);
+
+            var okKarat = !karat || o.karat === karat;
+            var okColor = !color || o.color === color;
+
+            return okItem && okKarat && okColor;
+        });
     }
     getAllowedSizesForItem(itemCode) {
 
@@ -162,6 +228,30 @@ export default class SgfClientPortal extends LightningElement {
     // ════════════ LOGIN ════════════
     handleGstInput(e)    { this.loginGst    = e.target.value; this.loginError = ''; }
     handleMobileInput(e) { this.loginMobile = e.target.value; this.loginError = ''; }
+    handleCompletedItemSearch(e) {
+        this.completedSearchItem = e.target.value;
+    }
+
+    handleCompletedDayChange(e) {
+        this.completedFilterDay = e.target.value;
+        this._loadCompletedOrders();
+    }
+
+    handleCompletedKaratChange(e) {
+        this.completedFilterKarat = e.target.value;
+    }
+
+    handleCompletedColorChange(e) {
+        this.completedFilterColor = e.target.value;
+    }
+
+    handleCompletedClearFilter() {
+        this.completedSearchItem = '';
+        this.completedFilterDay = String(COMPLETED_ORDER_DAYS_BACK);
+        this.completedFilterKarat = '';
+        this.completedFilterColor = '';
+        this._loadCompletedOrders();
+    }
     handleDownloadCatalogue() {
         var a = document.createElement('a');
         a.href     = CATALOGUE_PDF;           // resolved Salesforce CDN URL
@@ -336,12 +426,6 @@ export default class SgfClientPortal extends LightningElement {
 }
 
     // ════════════ TABS ════════════
-    // handleTabOrder() {
-    //     this.activeTab = 'order';
-    //     if (this.orderFlowState === 'confirm') {
-    //         this.orderFlowState = 'form';
-    //     }
-    // }
     handleTabOrder() {
         this.activeTab = 'order';
         this.stopPolling(); 
@@ -349,6 +433,64 @@ export default class SgfClientPortal extends LightningElement {
         if (this.orderFlowState === 'confirm') {
             this.orderFlowState = 'form';
         }
+    }
+    handleTabCompleted() {
+        this.activeTab = 'completed';
+        this.stopPolling();
+        this._loadCompletedOrders();
+    }
+    _loadCompletedOrders() {
+        this.completedOrdersLoading = true;
+        var self = this;
+
+        var days = parseInt(this.completedFilterDay || COMPLETED_ORDER_DAYS_BACK, 10);
+
+        getCompletedOrders({
+            customerCode: this.clientCustomerCode,
+            mobileNo: this.clientMobile,
+            daysBack: days
+        })
+        .then(function(res) {
+            self.completedOrdersLoading = false;
+
+            self.completedOrders = (res || []).map(function(o, idx) {
+                var orderDate = o.orderDate
+                    ? new Date(o.orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—';
+
+                var dispatchDate = o.dispatchDate
+                    ? new Date(o.dispatchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—';
+
+                var dueDate = o.dueDate
+                    ? new Date(o.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '—';
+
+                return {
+                    id: o.id || ('co-' + idx),
+                    srNo: idx + 1,
+                    orderId: o.orderId || '—',
+                    itemCode: o.itemCode || '—',
+                    color: o.color || '—',
+                    karat: o.karat || '—',
+                    sizeVal: o.sizeVal || '—',
+                    qty: o.quantity || 0,
+                    dispatchedQty: o.dispatchedQuantity || 0,
+                    priority: o.priority || '—',
+                    status: o.status || 'Completed',
+                    remark: o.remark || '—',
+                    orderDate: orderDate,
+                    dispatchDate: dispatchDate,
+                    dueDate: dueDate,
+                    statusClass: 'status-badge status-completed',
+                    cardClass: 'co-card'
+                };
+            });
+        })
+        .catch(function(err) {
+            self.completedOrdersLoading = false;
+            self._toast('error', (err.body && err.body.message) || 'Could not load completed orders.');
+        });
     }
     disconnectedCallback() {
         this.stopPolling();

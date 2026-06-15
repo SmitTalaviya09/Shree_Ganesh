@@ -1275,6 +1275,11 @@
                 <default>false</default>
                 <label>3BOX</label>
             </value>
+            <value>
+                <fullName>Post</fullName>
+                <default>false</default>
+                <label>Post</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

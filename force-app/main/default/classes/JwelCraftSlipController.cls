@@ -85,6 +85,7 @@ public without sharing class JwelCraftSlipController {
                 String unitLabel = unitRaw == 'g/in'  ? 'g / in'
                                  : unitRaw == 'Inches' ? 'Inches'
                                  : unitRaw == 'Grams'  ? 'Grams'
+                                 : unitRaw == 'g'  ? 'g'
                                  : unitRaw == 'Pair'   ? 'Pair'// AADD
                                  : unitRaw == 'pcs+Pair'  ? 'pcs + Pair'  // ✅ ADD
                                  : unitRaw == 'pcs+g'     ? 'pcs + g'     // ✅ ADD

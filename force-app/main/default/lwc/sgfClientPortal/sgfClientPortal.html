@@ -76,6 +76,7 @@
             <div class="tab-bar">
                 <button class={tabOrderClass}    onclick={handleTabOrder}>🛒 Place Order</button>
                 <button class={tabMyOrdersClass} onclick={handleTabMyOrders}>📋 My Orders</button>
+                <button class={tabCompletedClass} onclick={handleTabCompleted}>✅ Completed Orders</button>
             </div>
 
             <!-- ══ PLACE ORDER TAB ══ -->
@@ -731,6 +732,188 @@
                                 <div class="mo-empty-sub">
                                     Accepted and rejected orders appear here after our team reviews them.
                                 </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </template>
+            <template if:true={isTabCompleted}>
+                <div class="completed-orders-section">
+                    <div class="co-section-head">
+                        <div>
+                            <div class="co-section-title">Completed Orders</div>
+                            <div class="co-section-sub">Showing completed order history from Big Object</div>
+                        </div>
+                        <template if:true={hasCompletedOrders}>
+                            <span class="co-count-badge">{filteredCompletedOrders.length} Orders</span>
+                        </template>
+                    </div>
+
+                    <div class="co-filter-card">
+                        <div class="co-filter-grid">
+                            <div class="co-filter-field">
+                                <label>Item Code / Order ID</label>
+                                <input class="co-filter-input"
+                                    type="text"
+                                    placeholder="Search item or order id..."
+                                    value={completedSearchItem}
+                                    oninput={handleCompletedItemSearch} />
+                            </div>
+
+                            <div class="co-filter-field">
+                                <label>Day View</label>
+                                <select class="co-filter-input"
+                                        value={completedFilterDay}
+                                        onchange={handleCompletedDayChange}>
+                                    <template for:each={completedDayOptions} for:item="d">
+                                        <option key={d.value} value={d.value}>{d.label}</option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="co-filter-field">
+                                <label>Karat</label>
+                                <select class="co-filter-input"
+                                        value={completedFilterKarat}
+                                        onchange={handleCompletedKaratChange}>
+                                    <option value="">All Karat</option>
+                                    <template for:each={completedKaratOptions} for:item="k">
+                                        <option key={k.value} value={k.value}>{k.label}</option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="co-filter-field">
+                                <label>Color</label>
+                                <select class="co-filter-input"
+                                        value={completedFilterColor}
+                                        onchange={handleCompletedColorChange}>
+                                    <option value="">All Color</option>
+                                    <template for:each={completedColorOptions} for:item="c">
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div class="co-filter-action">
+                                <button class="co-clear-btn" onclick={handleCompletedClearFilter}>Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <template if:true={completedOrdersLoading}>
+                        <div class="co-loading">⏳ Loading completed orders…</div>
+                    </template>
+
+                    <template if:false={completedOrdersLoading}>
+                        <template if:true={hasCompletedOrders}>
+                            <div class="co-table-wrap">
+                                <div class="co-table-scroll">
+                                    <table class="co-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="c">#</th>
+                                                <!-- <th>Order ID</th> -->
+                                                <th>Item Code</th>
+                                                <th>Color</th>
+                                                <th>Karat</th>
+                                                <th>Size</th>
+                                                <th class="r">Qty</th>
+                                                <th class="r">Dispatch Qty</th>
+                                                <!-- <th>Order Date</th> -->
+                                                <th>Dispatch Date</th>
+                                                <th>Status</th>
+                                                <th>Remark</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template for:each={filteredCompletedOrders} for:item="o">
+                                                <tr key={o.id}>
+                                                    <td class="c co-sr">{o.srNo}</td>
+                                                    <!-- <td><span class="co-code">{o.orderId}</span></td> -->
+                                                    <td><span class="co-item">{o.itemCode}</span></td>
+                                                    <td>{o.color}</td>
+                                                    <td>{o.karat}</td>
+                                                    <td>{o.sizeVal}</td>
+                                                    <td class="r co-num">{o.qty}</td>
+                                                    <td class="r co-num">{o.dispatchedQty}</td>
+                                                    <!-- <td class="co-date">{o.orderDate}</td> -->
+                                                    <td class="co-date">{o.dispatchDate}</td>
+                                                    <td><span class={o.statusClass}>{o.status}</span></td>
+                                                    <td class="co-remark">{o.remark}</td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="co-table-footer">Showing {filteredCompletedOrders.length} completed order(s)</div>
+                            </div>
+
+                            <div class="co-cards">
+                                <template for:each={filteredCompletedOrders} for:item="o">
+                                    <div key={o.id} class={o.cardClass}>
+                                        <div class="co-card-head">
+                                            <span class="co-card-sr">#{o.srNo}</span>
+                                            <!-- <span class="co-card-code">{o.orderId}</span> -->
+                                            <span class={o.statusClass}>{o.status}</span>
+                                        </div>
+
+                                        <div class="co-card-body">
+                                            <div class="co-field full">
+                                                <span class="co-lbl">Item Code</span>
+                                                <span class="co-val strong">{o.itemCode}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Color</span>
+                                                <span class="co-val">{o.color}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Karat</span>
+                                                <span class="co-val">{o.karat}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Size</span>
+                                                <span class="co-val">{o.sizeVal}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Qty</span>
+                                                <span class="co-val">{o.qty}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Dispatch Qty</span>
+                                                <span class="co-val">{o.dispatchedQty}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Order Date</span>
+                                                <span class="co-val">{o.orderDate}</span>
+                                            </div>
+
+                                            <div class="co-field">
+                                                <span class="co-lbl">Dispatch Date</span>
+                                                <span class="co-val">{o.dispatchDate}</span>
+                                            </div>
+
+                                            <div class="co-field full">
+                                                <span class="co-lbl">Remark</span>
+                                                <span class="co-val">{o.remark}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template if:false={hasCompletedOrders}>
+                            <div class="co-empty">
+                                <span class="co-empty-icon">✅</span>
+                                <div class="co-empty-title">No completed orders found</div>
+                                <div class="co-empty-sub">Completed orders from selected day view will appear here.</div>
                             </div>
                         </template>
                     </template>

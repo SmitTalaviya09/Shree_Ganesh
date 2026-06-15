@@ -14,7 +14,7 @@ public without sharing class SGFClientPortalController {
             String cleanMobile = mobileNo.trim();
 
             List<Client_Registration__c> clients = [
-                SELECT Id, Client_Name__c, GST_Number__c, Client_Mobile__c
+                SELECT Id, Client_Name__c, GST_Number__c, Client_Mobile__c,Customer_Code__c
                 FROM Client_Registration__c
                 WHERE GST_Number__c   = :cleanGst
                 AND   Client_Mobile__c = :cleanMobile
@@ -63,7 +63,21 @@ public without sharing class SGFClientPortalController {
 
             List<String> orderIds = new List<String>();
             List<Order_Stage_Log__c> logs = new List<Order_Stage_Log__c>();
- 
+
+            String customerCode = '';
+
+            List<Client_Registration__c> clientList = [
+                SELECT Id, Customer_Code__c
+                FROM Client_Registration__c
+                WHERE GST_Number__c = :gstNumber.trim()
+                AND Client_Mobile__c = :mobileNo.trim()
+                LIMIT 1
+            ];
+
+            if (!clientList.isEmpty()) {
+                customerCode = clientList[0].Customer_Code__c;
+            }
+
             for (Map<String, Object> line : orderLines) {
                 String  itemCode = (String)  line.get('itemCode');
                 String  color    = (String)  line.get('color');
@@ -86,6 +100,7 @@ public without sharing class SGFClientPortalController {
                 logs.add(new Order_Stage_Log__c(
                     Order_ID_Ref__c       = orderId,
                     Customer_Name__c      = clientName,
+                    Customer_Code__c = String.isNotBlank(customerCode) ? customerCode : '',
                     //Customer_Code__c      = gstNumber  != null ? gstNumber  : '',
                     Customer_GST_Number__c = gstNumber  != null ? gstNumber  : '',
                     Customer_Mobile_No__c = mobileNo   != null ? mobileNo   : '',
@@ -455,5 +470,103 @@ public without sharing class SGFClientPortalController {
         }
         return result;
     }
-    
+    public class CompletedOrderWrap {
+        @AuraEnabled public String id;
+        @AuraEnabled public String orderId;
+        @AuraEnabled public String itemCode;
+        @AuraEnabled public String color;
+        @AuraEnabled public String karat;
+        @AuraEnabled public String sizeVal;
+        @AuraEnabled public Decimal quantity;
+        @AuraEnabled public Decimal dispatchedQuantity;
+        @AuraEnabled public String priority;
+        @AuraEnabled public String status;
+        @AuraEnabled public String remark;
+        @AuraEnabled public Datetime  orderDate;
+        @AuraEnabled public Datetime  dispatchDate;
+        @AuraEnabled public Datetime  dueDate;
+        @AuraEnabled public String customerName;
+        @AuraEnabled public String customerCode;
+        @AuraEnabled public String mobileNo;
+    }
+
+    @AuraEnabled
+    public static List<CompletedOrderWrap> getCompletedOrders(
+        String customerCode,
+        String mobileNo,
+        Integer daysBack
+    ) {
+        try {
+            Integer finalDays = daysBack == null ? 10 : daysBack;
+
+            Datetime fromDateTime = Datetime.newInstance(
+                Date.today().addDays(-finalDays),
+                Time.newInstance(0, 0, 0, 0)
+            );
+
+            Datetime toDateTime = Datetime.newInstance(
+                Date.today().addDays(1),
+                Time.newInstance(0, 0, 0, 0)
+            );
+
+            List<JewelryOrder__b> rows = [
+                SELECT Id, CreatedDate, Color__c, Customer_Code__c, Customer_Mobile_No__c,
+                    Customer_Name__c, Dispatched_Quantity__c, Item_Code__c, Karat__c,
+                    Order_Created_By__c, Order_Date__c, Order_Dispatch_Date__c,
+                    Order_Due_Date__c, Order_ID__c, Order_Status__c, Priority__c,
+                    Quantity__c, Remark__c, Size__c
+                FROM JewelryOrder__b
+                LIMIT 500
+            ];
+
+            List<CompletedOrderWrap> result = new List<CompletedOrderWrap>();
+
+            for (JewelryOrder__b o : rows) {
+                if (String.isNotBlank(customerCode) && o.Customer_Code__c != customerCode) {
+                    continue;
+                }
+
+                if (String.isNotBlank(mobileNo) && o.Customer_Mobile_No__c != mobileNo) {
+                    continue;
+                }
+
+                Datetime filterDate = o.Order_Dispatch_Date__c != null
+                    ? o.Order_Dispatch_Date__c
+                    : o.Order_Date__c;
+
+                if (filterDate == null) {
+                    continue;
+                }
+
+                if (filterDate < fromDateTime || filterDate >= toDateTime) {
+                    continue;
+                }
+
+                CompletedOrderWrap w = new CompletedOrderWrap();
+                w.id = String.valueOf(o.Id);
+                w.orderId = o.Order_ID__c;
+                w.itemCode = o.Item_Code__c;
+                w.color = o.Color__c;
+                w.karat = o.Karat__c;
+                w.sizeVal = o.Size__c;
+                w.quantity = o.Quantity__c;
+                w.dispatchedQuantity = o.Dispatched_Quantity__c;
+                w.priority = o.Priority__c;
+                w.status = o.Order_Status__c;
+                w.remark = o.Remark__c;
+                w.orderDate = o.Order_Date__c;
+                w.dispatchDate = o.Order_Dispatch_Date__c;
+                w.dueDate = o.Order_Due_Date__c;
+                w.customerName = o.Customer_Name__c;
+                w.customerCode = o.Customer_Code__c;
+                w.mobileNo = o.Customer_Mobile_No__c;
+
+                result.add(w);
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new AuraHandledException('getCompletedOrders: ' + e.getMessage());
+        }
+    }
 }
