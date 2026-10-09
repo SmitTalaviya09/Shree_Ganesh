@@ -222,7 +222,7 @@ public without sharing class SGFClientPortalController {
                        CreatedDate,Customer_Code__c
                 FROM Client_Registration__c
                 ORDER BY CreatedDate DESC
-                LIMIT 500
+                
             ];
         } catch (Exception e) {
             throw new AuraHandledException('getAllClientRegistrations: ' + e.getMessage());
@@ -296,7 +296,7 @@ public without sharing class SGFClientPortalController {
                 FROM Order_Stage_Log__c
                 WHERE Current_Stage__c = 'Client New'
                 ORDER BY Order_Date__c ASC
-                LIMIT 500
+                
             ];
         } catch (Exception e) {
             throw new AuraHandledException('getClientNewOrders: ' + e.getMessage());
@@ -516,7 +516,7 @@ public without sharing class SGFClientPortalController {
                     Order_Due_Date__c, Order_ID__c, Order_Status__c, Priority__c,
                     Quantity__c, Remark__c, Size__c
                 FROM JewelryOrder__b
-                LIMIT 500
+                
             ];
 
             List<CompletedOrderWrap> result = new List<CompletedOrderWrap>();

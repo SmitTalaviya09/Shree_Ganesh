@@ -175,6 +175,9 @@
                         <div class={deletedOrdersNavClass} onclick={handleDeletedOrders}>
                             <span class="sb-icon">🗑️</span>Deleted Orders
                         </div>
+                        <div class={marketingNavClass} onclick={handleMarketing}>
+                            <span class="sb-icon">📣</span>Login Marketing
+                        </div>
                     </template>
                     <c-sgf-client-order-banner></c-sgf-client-order-banner>
                 </template>
@@ -314,6 +317,9 @@
                         onshowtoast={handleChildToast}
                         onrefreshorders={handleRefreshOrders}>
                     </c-jwel-craft-deleted-orders>
+                </template>
+                <template if:true={showMarketing}>
+                    <c-jwel-craft-marketing onshowtoast={handleChildToast}></c-jwel-craft-marketing>
                 </template>
             </main>
         </div>

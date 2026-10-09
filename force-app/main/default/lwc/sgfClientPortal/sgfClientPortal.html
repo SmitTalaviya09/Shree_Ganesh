@@ -13,6 +13,32 @@
     <!-- ════ LOGIN ════ -->
     <template if:true={isLoginScreen}>
         <div class="login-page">
+            <div class={loginLayoutClass}>
+            <template if:true={hasMarketing}>
+                <section class="client-marketing" aria-label="Latest announcements">
+                    <header class="cm-header">
+                        <span class="cm-kicker">SHREE GANESH UPDATES</span>
+                        <h1>Discover what’s new</h1>
+                        <p>Latest collections, announcements and offers selected for our clients.</p>
+                    </header>
+                    <div class="cm-list">
+                        <template for:each={marketingItems} for:item="item">
+                            <article class="cm-card" key={item.id}>
+                                <template if:true={item.imageUrl}>
+                                    <button class="cm-image-wrap" data-src={item.imageUrl} data-title={item.title} onclick={handleMarketingImageOpen} aria-label="Open marketing image">
+                                        <img src={item.imageUrl} alt={item.title} class="cm-image"><span class="cm-badge">NEW</span><span class="cm-zoom">↗ View</span>
+                                    </button>
+                                </template>
+                                <div class="cm-copy">
+                                    <template if:true={item.title}><h2>{item.title}</h2></template>
+                                    <template if:true={item.message}><p>{item.message}</p></template>
+                                </div>
+                            </article>
+                        </template>
+                    </div>
+                    <div class="cm-swipe-hint">Swipe to see more <span>→</span></div>
+                </section>
+            </template>
             <div class="login-card">
                 <div class="brand-logo">
                     <!-- <div class="brand-gem">◆</div> -->
@@ -44,10 +70,21 @@
                     Not registered? Contact <strong>Shree Ganesh Finding</strong> to get access.
                 </div>
             </div>
+            </div>
         </div>
     </template>
 
     <!-- ════ APP ════ -->
+    <template if:true={showMarketingPreview}>
+        <section class="marketing-preview" role="dialog" aria-modal="true" aria-label="Marketing image preview" onclick={handleMarketingPreviewBackdrop}>
+            <div class="mp-dialog">
+                <button class="mp-close" onclick={handleMarketingImageClose} aria-label="Close image preview">×</button>
+                <img src={previewImageUrl} alt={previewImageTitle} class="mp-image">
+                <template if:true={previewImageTitle}><div class="mp-title">{previewImageTitle}</div></template>
+            </div>
+        </section>
+    </template>
+
     <template if:true={isAppScreen}>
         <div class="app-page">
 

@@ -182,50 +182,50 @@
                                 </template>
                             </div> -->
                             <div class="td td-action">
-    <template if:true={o.hasPending}>
-        <div class="action-menu-wrap">
-            <button class="btn-action-menu"
-                data-id={o.id}
-                onclick={handleActionMenuToggle}
-                title="More Actions">
-                ⋮
-            </button>
-            <template if:true={o.isActionMenuOpen}>
-                <div class="action-dropdown">
-                    ...
-                </div>
-            </template>
+                                <template if:true={o.hasPending}>
+                                    <div class="action-menu-wrap">
+                                        <button class="btn-action-menu"
+                                            data-id={o.id}
+                                            onclick={handleActionMenuToggle}
+                                            title="More Actions">
+                                            ⋮
+                                        </button>
+                                        <template if:true={o.isActionMenuOpen}>
+                                            <div class="action-dropdown">
+                                                ...
+                                            </div>
+                                        </template>
 
-            <template if:true={o.isActionMenuOpen}>
-                <div class="action-dropdown">
-                    <button class="action-dd-btn"
-                        data-id={o.id}
-                        onclick={handleAllocate}>
-                        + Allocate
-                    </button>
+                                        <template if:true={o.isActionMenuOpen}>
+                                            <div class="action-dropdown">
+                                                <button class="action-dd-btn"
+                                                    data-id={o.id}
+                                                    onclick={handleAllocate}>
+                                                    + Allocate
+                                                </button>
 
-                    <button class="action-dd-btn"
-                        data-id={o.code}
-                        onclick={handleSendToProduction}>
-                        Send to Production
-                    </button>
+                                                <button class="action-dd-btn"
+                                                    data-id={o.code}
+                                                    onclick={handleSendToProduction}>
+                                                    Send to Production
+                                                </button>
 
-                    <template if:true={o.isPartialReady}>
-                        <button class="action-dd-btn"
-                            data-id={o.id}
-                            onclick={handleMoveToReady}>
-                            ✓ Ready
-                        </button>
-                    </template>
-                </div>
-            </template>
-        </div>
-    </template>
+                                                <template if:true={o.isPartialReady}>
+                                                    <button class="action-dd-btn"
+                                                        data-id={o.id}
+                                                        onclick={handleMoveToReady}>
+                                                        ✓ Ready
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
 
-    <template if:false={o.hasPending}>
-        <span class="done-chip">✓ Done</span>
-    </template>
-</div>
+                                <template if:false={o.hasPending}>
+                                    <span class="done-chip">✓ Done</span>
+                                </template>
+                            </div>
                         </div>
                     </template>
                 </div>

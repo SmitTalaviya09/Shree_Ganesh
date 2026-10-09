@@ -41,11 +41,11 @@ $RECYCLE.BIN/
 
 # Local environment variables
 .env
-.vscode/
-coverage/
-.DS_Store
 
 # Python Salesforce Functions
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Google Drive service account key (do not commit secrets)
+force-app/main/default/customMetadata/Google_Drive_Config.*.md-meta.xml

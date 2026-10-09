@@ -48,6 +48,9 @@ export default class JwelCraftApp extends LightningElement {
     get deletedOrdersNavClass() {
         return this._navClass('deleted-orders');
     }
+    handleMarketing() { this._navigate('marketing'); }
+    get showMarketing() { return this.activeTab === 'marketing'; }
+    get marketingNavClass() { return this._navClass('marketing'); }
     connectedCallback() {
          const style = document.createElement('style');
                     style.innerText = `

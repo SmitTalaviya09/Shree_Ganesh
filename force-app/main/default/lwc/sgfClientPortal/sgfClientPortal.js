@@ -9,6 +9,7 @@ import getClientItemSizeMap         from '@salesforce/apex/SGFClientPortalContro
 import shreeganesh_Logo from '@salesforce/resourceUrl/shreeganesh_Logo';
 import CATALOGUE_PDF from '@salesforce/resourceUrl/SGFCatalogue';
 import getCompletedOrders from '@salesforce/apex/SGFClientPortalController.getCompletedOrders';
+import getActiveContent from '@salesforce/apex/MarketingContentController.getActiveContent';
 
 var UNIT_MAP = {
     'Quantity':       ['Pieces'],
@@ -27,7 +28,7 @@ var STEP_MAP = { 'Pieces': '1', 'Pair': '1', 'Inches': '0.01', 'Grams': '0.001' 
 var SIZE_OPTIONS_BY_ITEM = {
     Breslet: ['1.0 mm','1.1 mm','1.2 mm','1.3 mm','1.4 mm','1.5 mm','1.6 mm','1.7 mm','1.8 mm','1.9 mm','2.0 mm','2.5 mm','3.0 mm','3.5 mm'],
     Ring:     ['1.0 mm','1.1 mm','1.2 mm','1.3 mm','1.4 mm','1.5 mm','1.6 mm','1.7 mm','1.8 mm','1.9 mm','2.0 mm','2.5 mm'],
-    Neklesh: ['1.5 mm','2.0 mm','2.5 mm']
+    Neklesh: ['1.5 mm','2.0 mm','2.5 mm','3.0 mm','3.5 mm']
 };
 
 // Static color options with gradient swatches
@@ -88,6 +89,10 @@ export default class SgfClientPortal extends LightningElement {
     @track toastType = '';
     @track showToast = false;
     @track gemIcon = shreeganesh_Logo;
+    @track marketingItems = [];
+    @track showMarketingPreview = false;
+    @track previewImageUrl = '';
+    @track previewImageTitle = '';
     pollingInterval;
     // Category + Size maps
     allItemCategoryMap = {};   // { 'Rings': ['RING-001', ...], ... }
@@ -102,6 +107,8 @@ export default class SgfClientPortal extends LightningElement {
 
     // ════════════ SCREEN GETTERS ════════════
     get isLoginScreen()     { return this.screen === 'login'; }
+    get hasMarketing()      { return this.marketingItems.length > 0; }
+    get loginLayoutClass()  { return this.hasMarketing ? 'login-layout has-marketing' : 'login-layout'; }
     get isAppScreen()       { return this.screen === 'app'; }
     get isTabOrder()        { return this.activeTab === 'order'; }
     get isTabMyOrders()     { return this.activeTab === 'myorders'; }
@@ -208,6 +215,7 @@ export default class SgfClientPortal extends LightningElement {
     }
 
     connectedCallback() {
+        this.loadMarketingContent();
         const style = document.createElement('style');
                     style.innerText = `
                     .cCenterPanel.slds-m-top--x-large.slds-p-horizontal--medium{
@@ -225,6 +233,28 @@ export default class SgfClientPortal extends LightningElement {
                     }, 200);
                 this.restoreClientSession();
     }
+    loadMarketingContent() {
+        getActiveContent()
+            .then(data => { this.marketingItems = data || []; })
+            .catch(() => { this.marketingItems = []; });
+    }
+    handleMarketingImageOpen(e) {
+        this.previewImageUrl = e.currentTarget.dataset.src;
+        this.previewImageTitle = e.currentTarget.dataset.title || 'Marketing image';
+        this.showMarketingPreview = true;
+        document.addEventListener('keydown', this.handleMarketingPreviewKeydown);
+    }
+    handleMarketingImageClose() {
+        this.showMarketingPreview = false;
+        this.previewImageUrl = '';
+        document.removeEventListener('keydown', this.handleMarketingPreviewKeydown);
+    }
+    handleMarketingPreviewBackdrop(e) {
+        if (e.target.classList.contains('marketing-preview')) this.handleMarketingImageClose();
+    }
+    handleMarketingPreviewKeydown = (e) => {
+        if (e.key === 'Escape') this.handleMarketingImageClose();
+    };
     // ════════════ LOGIN ════════════
     handleGstInput(e)    { this.loginGst    = e.target.value; this.loginError = ''; }
     handleMobileInput(e) { this.loginMobile = e.target.value; this.loginError = ''; }
@@ -371,7 +401,7 @@ export default class SgfClientPortal extends LightningElement {
     _loadPicklists() {
     var self = this;
 
-    // ✅ Load all 3 in parallel, then set screen ready
+    //  Load all 3 in parallel, then set screen ready
     // var p1 = getClientItemCodesByCategory()
     //     .then(function(res) {
     //         self.allItemCategoryMap = res || {};
@@ -390,7 +420,7 @@ export default class SgfClientPortal extends LightningElement {
     })
     .catch(function() {});
 
-    // ✅ getItemSizeMap — wait for this before screen shows
+    //  getItemSizeMap — wait for this before screen shows
     var p2 = getClientItemSizeMap()
         .then(function(res) {
             self.allItemSizeMap = res || {};
@@ -401,7 +431,7 @@ export default class SgfClientPortal extends LightningElement {
     var p3 = getClientPicklistValues()
         .then(function(res) {
             self.allItemCodes   = res.itemCodes   || [];
-            // ✅ Filter out 9K from karat values
+            //  Filter out 9K from karat values
             self.allKaratValues = (res.karatValues || []).filter(function(k) {
                 return k !== '9K';
             });
@@ -409,7 +439,7 @@ export default class SgfClientPortal extends LightningElement {
         })
         .catch(function() {});
 
-    // ✅ Wait for ALL to finish before showing app
+    //  Wait for ALL to finish before showing app
     Promise.all([p1, p2, p3])
         .then(function() {
             self.screen         = 'app';
@@ -494,6 +524,7 @@ export default class SgfClientPortal extends LightningElement {
     }
     disconnectedCallback() {
         this.stopPolling();
+        document.removeEventListener('keydown', this.handleMarketingPreviewKeydown);
     }
     handleTabMyOrders() {
         this.activeTab = 'myorders';
@@ -542,7 +573,7 @@ export default class SgfClientPortal extends LightningElement {
                     } else if (stage === 'Pending Review' || stage === 'Client New' || stage === '') {
                         uiStatus = 'Pending Review';
                     } else {
-                        uiStatus = 'Accepted';  // ✅ everything else
+                        uiStatus = 'Accepted';  //  everything else
                     }
 
                     var statusClass =
@@ -730,7 +761,7 @@ export default class SgfClientPortal extends LightningElement {
         var category = e.currentTarget.dataset.value;
         var self     = this;
 
-        // ✅ Get item codes for selected category (including Uncategorized)
+        //  Get item codes for selected category (including Uncategorized)
         var itemsInCat = category
             ? (self.allItemCategoryMap[category] || [])
             : [];
@@ -770,7 +801,7 @@ export default class SgfClientPortal extends LightningElement {
                 qtyInputClass:      'inp inp-qty'
             });
 
-            // ✅ IMPORTANT: If user already typed size → try auto match again
+            // IMPORTANT: If user already typed size → try auto match again
             if (u.size) {
                 var matches = self.getMatchingClientItemCodes(category, u.size);
 
@@ -978,7 +1009,7 @@ handleSizeCommit(e) {
         u.sizeIsAuto = false;
         u.sizeInputClass = 'inp';
 
-        // ✅ IMPORTANT FIX:
+        //  IMPORTANT FIX:
         // If item code is already selected, do not clear/re-match item code.
         if (u.itemCode) {
             if (u.hasSizeOptions) {
@@ -1034,7 +1065,7 @@ handleSizeCommit(e) {
             u.itemTriggerClass = 'pick-trigger';
             u.filteredItems = u.category ? (self.allItemCategoryMap[u.category] || []) : [];
             u.hasItems = u.filteredItems.length > 0;
-            // ✅ Show validation toast if size format is invalid
+            //  Show validation toast if size format is invalid
             if (val && !self.isValidManualSize(val)) {
                 self._toast('error', 'Invalid Size Format — Allowed: 5.0 mm, 5.1 mm, 21.0 mm');
             }
@@ -1216,7 +1247,7 @@ handleSizeCommit(e) {
     var val  = e.currentTarget.dataset.value;
     var self = this;
 
-    // ✅ Lookup size from map
+    // Lookup size from map
     var autoSize    = (self.allItemSizeMap && self.allItemSizeMap[val]) || '';
     var allowedSizes  = self.getAllowedSizesForItem(val);
     var hasSizeOption = allowedSizes.length > 0;
@@ -1235,10 +1266,10 @@ handleSizeCommit(e) {
             qtyUnit:          '',
             quantity:         '',
             measureType:      '',
-            // ✅ These two were swapped/wrong before:
+            //  These two were swapped/wrong before:
             size:             hasSizeOption ? '' : autoSize,               // actual size value e.g. "5.0 mm"
-            sizeIsAuto:       hasAutoSize,             // ✅ boolean true/false
-            sizeInputClass:   hasAutoSize ? 'inp inp-auto' : 'inp',  // ✅ CSS class string
+            sizeIsAuto:       hasAutoSize,             //  boolean true/false
+            sizeInputClass:   hasAutoSize ? 'inp inp-auto' : 'inp',  //  CSS class string
             sizeOptions:      self.buildSizeOptions(allowedSizes, ''),
             hasSizeOptions:   hasSizeOption
         });
@@ -1677,16 +1708,6 @@ handleSizeCommit(e) {
     }
 
     // ════════════ DOWNLOAD ════════════
-    // handleDownloadPdf() {
-    //     var html = this._buildPdfContent();
-    //     var blob = new Blob([html], { type: 'text/html' });
-    //     var url  = URL.createObjectURL(blob);
-    //     var a    = document.createElement('a');
-    //     a.href = url;
-    //     a.download = 'OrderConfirmation_' + this.clientName.replace(/\s/g, '_') + '.html';
-    //     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    //     URL.revokeObjectURL(url);
-    // }
     handleDownloadPdf() {
         const client = encodeURIComponent(this.clientName);
         const gst = encodeURIComponent(this.clientGst);
@@ -1705,8 +1726,10 @@ handleSizeCommit(e) {
         var date   = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
         var rows = orders.map(function(o) {
             return '<tr><td>' + o.orderCode + '</td><td>' + o.itemCode +
-                   '</td><td style="text-align:right">' + o.quantity +
-                   '</td><td>' + o.unit + '</td><td>Client New</td></tr>';
+                '</td><td style="text-align:right">' + o.quantity +
+                '</td><td>' + o.unit +
+                '</td><td>' + (o.karat || '—') + '</td>' +   // ← KT column added here
+                '<td>Client New</td></tr>';
         }).join('');
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Order Confirmation — ' + client + '</title>' +
             '<style>body{font-family:Arial,sans-serif;margin:40px;color:#1c1408}' +
@@ -1724,38 +1747,42 @@ handleSizeCommit(e) {
             '<p><strong>GST:</strong> ' + gst + '</p>' +
             '<p><strong>Date:</strong> ' + date + '</p>' +
             '<p><strong>Total Orders:</strong> ' + orders.length + '</p></div>' +
-            '<table><thead><tr><th>Order Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead>' +
+            '<table><thead><tr><th>Order Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>KT</th><th>Status</th></tr></thead>' +
             '<tbody>' + rows + '</tbody></table>' +
             '<p class="footer">Thank you for your order. Our team will process it shortly.<br>Contact Shree Ganesh Finding for queries.</p>' +
             '<script>window.onload=function(){window.print();}<\/script></body></html>';
-    }
+    }    
 
     // _buildPdfContent() {
-    //     var orders = this.confirmedOrders, client = this.clientName, gst = this.clientGst;
+    //     var orders = this.confirmedOrders;
+    //     var client = this.clientName;
+    //     var gst    = this.clientGst;
     //     var date   = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    //     var rows   = orders.map(function(id) {
-    //         return '<tr><td>' + id + '</td><td style="color:#7a5200;font-weight:700;text-align:center">Pending Review</td></tr>';
+    //     var rows = orders.map(function(o) {
+    //         return '<tr><td>' + o.orderCode + '</td><td>' + o.itemCode +
+    //                '</td><td style="text-align:right">' + o.quantity +
+    //                '</td><td>' + o.unit + '</td><td>Client New</td></tr>';
     //     }).join('');
-    //     return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Order Confirmation</title>'
-    //         + '<style>body{font-family:Arial,sans-serif;margin:40px;color:#1c1408}'
-    //         + 'h1{font-size:22px;color:#b8860b}p.sub{color:#8a7050;font-size:13px;margin-bottom:20px}'
-    //         + '.info{background:#faf5e8;border:1px solid #e4d5b0;border-radius:8px;padding:14px;margin-bottom:16px}'
-    //         + '.info p{margin:3px 0;font-size:14px}table{width:100%;border-collapse:collapse}'
-    //         + 'th{background:#1c1408;color:#f0c040;padding:9px 13px;text-align:left;font-size:12px}'
-    //         + 'td{padding:8px 13px;border-bottom:1px solid #e4d5b0;font-size:13px}'
-    //         + 'tr:nth-child(even)td{background:#faf5e8}'
-    //         + '.note{margin-top:24px;font-size:12px;color:#8a7050;text-align:center}'
-    //         + '</style></head><body>'
-    //         + '<h1>Order Confirmation</h1><p class="sub">Shree Ganesh Finding · Client Portal</p>'
-    //         + '<div class="info"><p><strong>Client:</strong> ' + client + '</p>'
-    //         + '<p><strong>GST:</strong> ' + gst + '</p>'
-    //         + '<p><strong>Date:</strong> ' + date + '</p>'
-    //         + '<p><strong>Orders:</strong> ' + orders.length + '</p></div>'
-    //         + '<table><thead><tr><th>Order ID</th><th>Status</th></tr></thead>'
-    //         + '<tbody>' + rows + '</tbody></table>'
-    //         + '<p class="note">For queries contact Shree Ganesh Finding.</p>'
-    //         + '<script>window.onload=function(){window.print();}<\/script>'
-    //         + '</body></html>';
+    //     return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Order Confirmation — ' + client + '</title>' +
+    //         '<style>body{font-family:Arial,sans-serif;margin:40px;color:#1c1408}' +
+    //         'h1{font-size:22px;margin-bottom:4px}.sub{color:#8a7050;font-size:13px;margin-bottom:24px}' +
+    //         '.info{background:#faf5e8;border:1px solid #e4d5b0;border-radius:8px;padding:16px;margin-bottom:20px}' +
+    //         '.info p{margin:4px 0;font-size:14px}' +
+    //         'table{width:100%;border-collapse:collapse;margin-top:16px}' +
+    //         'th{background:#1c1408;color:#f0c040;padding:10px 14px;text-align:left;font-size:12px}' +
+    //         'td{padding:9px 14px;border-bottom:1px solid #e4d5b0;font-size:13px}' +
+    //         'tr:nth-child(even) td{background:#faf5e8}' +
+    //         '.footer{margin-top:32px;font-size:11px;color:#8a7050;text-align:center}' +
+    //         '@media print{body{margin:20px}}</style></head><body>' +
+    //         '<h1>Order Confirmation</h1><p class="sub">Shree Ganesh Finding · Client Portal</p>' +
+    //         '<div class="info"><p><strong>Client:</strong> ' + client + '</p>' +
+    //         '<p><strong>GST:</strong> ' + gst + '</p>' +
+    //         '<p><strong>Date:</strong> ' + date + '</p>' +
+    //         '<p><strong>Total Orders:</strong> ' + orders.length + '</p></div>' +
+    //         '<table><thead><tr><th>Order Code</th><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead>' +
+    //         '<tbody>' + rows + '</tbody></table>' +
+    //         '<p class="footer">Thank you for your order. Our team will process it shortly.<br>Contact Shree Ganesh Finding for queries.</p>' +
+    //         '<script>window.onload=function(){window.print();}<\/script></body></html>';
     // }
 
     // ════════════ LOGOUT ════════════

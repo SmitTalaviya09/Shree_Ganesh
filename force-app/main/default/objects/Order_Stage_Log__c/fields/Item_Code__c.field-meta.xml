@@ -1280,6 +1280,36 @@
                 <default>false</default>
                 <label>Post</label>
             </value>
+            <value>
+                <fullName>EXPORT_CHAKI</fullName>
+                <default>false</default>
+                <label>EXPORT_CHAKI</label>
+            </value>
+            <value>
+                <fullName>IP99</fullName>
+                <default>false</default>
+                <label>IP99</label>
+            </value>
+            <value>
+                <fullName>IP100</fullName>
+                <default>false</default>
+                <label>IP100</label>
+            </value>
+            <value>
+                <fullName>NP48</fullName>
+                <default>false</default>
+                <label>NP48</label>
+            </value>
+            <value>
+                <fullName>NP49</fullName>
+                <default>false</default>
+                <label>NP49</label>
+            </value>
+            <value>
+                <fullName>NP50</fullName>
+                <default>false</default>
+                <label>NP50</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

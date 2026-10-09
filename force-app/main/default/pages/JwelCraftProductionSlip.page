@@ -290,9 +290,9 @@ html, body {
                             </td>
                             <td class="col-cust">
                                 <span class="cust-chip">{!cl.customerCode}</span>
-                                 <!--<apex:outputPanel rendered="{!NOT(ISBLANK(cl.remark))}">
-                                    <div class="row-remark">↳ {!cl.remark}</div>
-                                </apex:outputPanel> -->
+                                 <apex:outputPanel rendered="{!NOT(ISBLANK(cl.remark))}">
+                                    <div class="row-remark">{!cl.remark}</div>
+                                </apex:outputPanel>
                             </td>
                             <td class="col-qty">
                                 <span class="qty-num">{!cl.qty}</span>

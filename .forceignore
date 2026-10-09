@@ -12,3 +12,12 @@ package.xml
 **/__tests__/**
 
 node_modules/
+
+# Experience Cloud sites (Client Order, order view) are created manually in scratch orgs
+**/networks/**
+**/sites/**
+**/siteDotComSites/**
+**/networkBranding/**
+**/navigationMenus/**
+**/profiles/Client Order Profile.profile-meta.xml
+**/profiles/order view Profile.profile-meta.xml

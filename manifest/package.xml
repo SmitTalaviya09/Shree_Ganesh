@@ -1,48 +1,252 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    Shree Ganesh - Experience Cloud sites + all dependencies
+    Sites : /ClientOrder (Client Order)  and  /orderview (order view)
+    Source org : shreeprod (orgfarm-73d295d63d)
+
+    NOTE: ExperienceBundle (Client_Order1, order_view1) is NOT listed because
+    "Enable ExperienceBundle Metadata API" is OFF in the source org.
+    The site pages are carried by SiteDotCom instead.
+-->
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+
+	<!-- ===================== EXPERIENCE SITES ===================== -->
 	<types>
-		<members>*</members>
+		<members>Client Order</members>
+		<members>order view</members>
+		<name>Network</name>
+	</types>
+	<types>
+		<members>Client_Order</members>
+		<members>order_view</members>
+		<name>CustomSite</name>
+	</types>
+	<types>
+		<members>Client_Order1</members>
+		<members>order_view1</members>
+		<name>SiteDotCom</name>
+	</types>
+	<types>
+		<members>SFDC_Default_Navigation_Client_Order</members>
+		<members>SFDC_Default_Navigation_order_view</members>
+		<name>NavigationMenu</name>
+	</types>
+	<types>
+		<members>cbClient_Order</members>
+		<members>cborder_view</members>
+		<name>NetworkBranding</name>
+	</types>
+	<!-- Site guest user profiles -->
+	<types>
+		<members>Client Order Profile</members>
+		<members>order view Profile</members>
+		<name>Profile</name>
+	</types>
+
+	<!-- ===================== LWC (site entry: jwelCraftApp, sgfClientPortal, sgfClientOrderBanner) ===================== -->
+	<types>
+		<members>jwelCraftAdminDispatch</members>
+		<members>jwelCraftAllOrders</members>
+		<members>jwelCraftAllocateStock</members>
+		<members>jwelCraftApp</members>
+		<members>jwelCraftClientOrders</members>
+		<members>jwelCraftClientReg</members>
+		<members>jwelCraftCompleteOrder</members>
+		<members>jwelCraftDashboard</members>
+		<members>jwelCraftDeletedOrders</members>
+		<members>jwelCraftDispatchModal</members>
+		<members>jwelCraftDispatched</members>
+		<members>jwelCraftInventory</members>
+		<members>jwelCraftLogin</members>
+		<members>jwelCraftMarketing</members>
+		<members>jwelCraftOrderEntry</members>
+		<members>jwelCraftProductionBoard</members>
+		<members>jwelCraftProductionBoardWhite</members>
+		<members>jwelCraftProductionQueue</members>
+		<members>jwelCraftQuickStock</members>
+		<members>jwelCraftToast</members>
+		<members>jwelCraftUserMgmt</members>
+		<members>jwelCraftUtils</members>
+		<members>sgfClientOrderBanner</members>
+		<members>sgfClientPortal</members>
+		<name>LightningComponentBundle</name>
+	</types>
+
+	<!-- ===================== AURA (site login / register) ===================== -->
+	<types>
+		<members>forgotPassword</members>
+		<members>loginForm</members>
+		<members>selfRegister</members>
+		<members>setExpId</members>
+		<members>setStartUrl</members>
+		<name>AuraDefinitionBundle</name>
+	</types>
+
+	<!-- ===================== APEX ===================== -->
+	<types>
+		<!-- App controllers used by LWC -->
+		<members>JewelryOrderController</members>
+		<members>JwelAuthController</members>
+		<members>MarketingContentController</members>
+		<members>SGFClientPortalController</members>
+		<!-- VF page controllers (production slip / order PDF) -->
+		<members>JwelCraftSlipController</members>
+		<members>SGF_OrderPDFController</members>
+		<!-- Trigger handlers, Google backup, batch/scheduler -->
+		<members>GoogleDriveJWT</members>
+		<members>InventoryTriggerHandler</members>
+		<members>OrderDataCleanupBatch</members>
+		<members>OrderDataCleanupScheduler</members>
+		<members>OrderStageLogBackup</members>
+		<members>OrderStageLogTriggerHandler</members>
+		<!-- Standard Experience site controllers + tests -->
+		<members>ChangePasswordController</members>
+		<members>ChangePasswordControllerTest</members>
+		<members>CommunitiesLandingController</members>
+		<members>CommunitiesLandingControllerTest</members>
+		<members>CommunitiesLoginController</members>
+		<members>CommunitiesLoginControllerTest</members>
+		<members>CommunitiesSelfRegConfirmController</members>
+		<members>CommunitiesSelfRegConfirmControllerTest</members>
+		<members>CommunitiesSelfRegController</members>
+		<members>CommunitiesSelfRegControllerTest</members>
+		<members>ForgotPasswordController</members>
+		<members>ForgotPasswordControllerTest</members>
+		<members>LightningForgotPasswordController</members>
+		<members>LightningForgotPasswordControllerTest</members>
+		<members>LightningLoginFormController</members>
+		<members>LightningLoginFormControllerTest</members>
+		<members>LightningSelfRegisterController</members>
+		<members>LightningSelfRegisterControllerTest</members>
+		<members>MicrobatchSelfRegController</members>
+		<members>MicrobatchSelfRegControllerTest</members>
+		<members>MyProfilePageController</members>
+		<members>MyProfilePageControllerTest</members>
+		<members>SiteLoginController</members>
+		<members>SiteRegisterController</members>
 		<name>ApexClass</name>
 	</types>
 	<types>
-		<members>*</members>
-		<name>ApexComponent</name>
+		<members>InventoryTrigger</members>
+		<members>OrderStageLogTrigger</members>
+		<name>ApexTrigger</name>
 	</types>
+
+	<!-- ===================== VISUALFORCE ===================== -->
 	<types>
-		<members>*</members>
+		<!-- Opened from LWC -->
+		<members>JwelCraftProductionSlip</members>
+		<members>SGF_OrderConfirmationPDF</members>
+		<!-- Standard Experience site pages (referenced by CustomSite) -->
+		<members>AnswersHome</members>
+		<members>BandwidthExceeded</members>
+		<members>ChangePassword</members>
+		<members>CommunitiesLanding</members>
+		<members>CommunitiesLogin</members>
+		<members>CommunitiesSelfReg</members>
+		<members>CommunitiesSelfRegConfirm</members>
+		<members>CommunitiesTemplate</members>
+		<members>Exception</members>
+		<members>FileNotFound</members>
+		<members>ForgotPassword</members>
+		<members>ForgotPasswordConfirm</members>
+		<members>IdeasHome</members>
+		<members>InMaintenance</members>
+		<members>MicrobatchSelfReg</members>
+		<members>MyProfilePage</members>
+		<members>SiteLogin</members>
+		<members>SiteRegister</members>
+		<members>SiteRegisterConfirm</members>
+		<members>SiteTemplate</members>
+		<members>StdExceptionTemplate</members>
+		<members>Unauthorized</members>
+		<members>UnderConstruction</members>
 		<name>ApexPage</name>
 	</types>
 	<types>
-		<members>*</members>
-		<name>ApexTestSuite</name>
+		<members>SiteFooter</members>
+		<members>SiteHeader</members>
+		<members>SiteLogin</members>
+		<members>SitePoweredBy</members>
+		<name>ApexComponent</name>
 	</types>
+
+	<!-- ===================== STATIC RESOURCES ===================== -->
 	<types>
-		<members>*</members>
-		<name>ApexTrigger</name>
+		<members>SGFCatalogue</members>
+		<members>shreeganesh_Logo</members>
+		<members>SiteSamples</members>
+		<name>StaticResource</name>
 	</types>
-	<types>
-		<members>*</members>
-		<name>AuraDefinitionBundle</name>
-	</types>
+
+	<!-- ===================== DATA MODEL ===================== -->
 	<types>
 		<members>Client_Registration__c</members>
 		<members>Customer__c</members>
+		<members>Google_Drive_Config__mdt</members>
 		<members>Inventory__c</members>
+		<members>Item_Configuration__mdt</members>
 		<members>JewelryOrder__b</members>
 		<members>JwelUser__c</members>
+		<members>Marketing_Content__c</members>
 		<members>Order_Stage_Log__c</members>
 		<members>Order__c</members>
 		<members>Production_Batch__c</members>
 		<name>CustomObject</name>
 	</types>
+	<!-- Custom metadata records (Item_Configuration.*, Google_Drive_Config.*) -->
 	<types>
 		<members>*</members>
-		<name>LightningComponentBundle</name>
+		<name>CustomMetadata</name>
 	</types>
 	<types>
-		<members>*</members>
-		<name>StaticResource</name>
+		<members>Client_Registration__c-Client Registration Layout</members>
+		<members>Customer__c-Customer Layout</members>
+		<members>Google_Drive_Config__mdt-Google Drive Config Layout</members>
+		<members>Inventory__c-Inventory Layout</members>
+		<members>Item_Configuration__mdt-Item Configuration Layout</members>
+		<members>JwelUser__c-JwelCraft User Layout</members>
+		<members>Marketing_Content__c-Marketing Content Layout</members>
+		<members>Order_Stage_Log__c-Order Stage Log Layout</members>
+		<members>Order__c-Order Layout</members>
+		<members>Production_Batch__c-Production Batch Layout</members>
+		<name>Layout</name>
 	</types>
-    
+
+	<!-- ===================== APP / TABS / PAGES (internal) ===================== -->
+	<types>
+		<members>Shree_Ganesh</members>
+		<name>CustomApplication</name>
+	</types>
+	<types>
+		<members>Client_Registration__c</members>
+		<members>Inventory__c</members>
+		<members>JwelUser__c</members>
+		<members>Marketing_Content__c</members>
+		<members>Order_Stage_Log__c</members>
+		<members>Order__c</members>
+		<members>Production_Batch__c</members>
+		<name>CustomTab</name>
+	</types>
+	<types>
+		<members>Inventory_Record_Page</members>
+		<members>Order_Stage_Log_Record_Page</members>
+		<members>Shree_Ganesh_UtilityBar</members>
+		<name>FlexiPage</name>
+	</types>
+
+	<!-- ===================== SECURITY / CALLOUTS ===================== -->
+	<types>
+		<members>SHREE_GANESH</members>
+		<name>PermissionSet</name>
+	</types>
+	<types>
+		<members>GoogleAppsScript</members>
+		<members>GoogleDriveOAuth</members>
+		<members>GoogleDriveUpload</members>
+		<members>GoogleSheetsAPI</members>
+		<name>RemoteSiteSetting</name>
+	</types>
+
 	<version>66.0</version>
 </Package>

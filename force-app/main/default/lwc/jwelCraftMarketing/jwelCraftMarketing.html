@@ -1,0 +1,47 @@
+<template>
+    <section class="page">
+        <header class="page-head">
+            <div><p class="eyebrow">ADMIN</p><h1>Login Marketing</h1><p>Create announcements for every client login page.</p></div>
+            <button class="primary" onclick={handleNew}>+ New content</button>
+        </header>
+
+        <template if:true={showEditor}>
+            <div class="editor">
+                <div class="editor-head"><h2>{editorTitle}</h2><button class="icon-btn" onclick={handleCancel} title="Close">×</button></div>
+                <div class="form-grid">
+                    <label class="wide">Title <input maxlength="120" value={draft.title} data-field="title" oninput={handleInput} placeholder="Example: New collection available"></label>
+                    <label class="wide">Message <textarea maxlength="2000" value={draft.message} data-field="message" oninput={handleInput} placeholder="Write the marketing message..."></textarea></label>
+                    <label>Display order <input type="number" min="0" max="9999" value={draft.displayOrder} data-field="displayOrder" oninput={handleInput}></label>
+                    <label class="check"><input type="checkbox" checked={draft.active} data-field="active" onchange={handleInput}> Show on login page</label>
+                </div>
+                <div class="actions"><button class="secondary" onclick={handleCancel}>Cancel</button><button class="primary" onclick={handleSave} disabled={saving}>Save and add image</button></div>
+                <template if:true={draft.id}>
+                    <div class="upload-box">
+                        <div><strong>Optional image</strong><p>Upload JPG, PNG, GIF, or WebP. A new upload replaces the image shown in the preview.</p></div>
+                        <lightning-file-upload record-id={draft.id} accept={acceptedFormats} onuploadfinished={handleUploadFinished}></lightning-file-upload>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <template if:true={loading}><div class="state"><lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner></div></template>
+        <template if:false={loading}>
+            <template if:true={hasItems}>
+                <div class="cards">
+                    <template for:each={items} for:item="item">
+                        <article class="card" key={item.id}>
+                            <template if:true={item.imageUrl}><img src={item.imageUrl} alt={item.title}></template>
+                            <div class="card-body">
+                                <div class="status-row"><span class={item.statusClass}>{item.statusLabel}</span><span>Order {item.orderLabel}</span></div>
+                                <template if:true={item.title}><h3>{item.title}</h3></template>
+                                <template if:true={item.message}><p>{item.message}</p></template>
+                                <div class="card-actions"><button data-id={item.id} onclick={handleEdit}>Edit</button><button class="danger" data-id={item.id} onclick={handleDelete}>Delete</button></div>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasItems}><div class="empty"><span>✦</span><h2>No marketing content yet</h2><p>Create the first message or image for your client login page.</p></div></template>
+        </template>
+    </section>
+</template>

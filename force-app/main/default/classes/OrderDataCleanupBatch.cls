@@ -95,7 +95,7 @@ System.debug('cleanupBigObjects failed: ' + e.getMessage());
             List<JewelryOrder__b> allRecords = [
                 SELECT Order_ID__c, Order_Dispatch_Date__c
                 FROM JewelryOrder__b
-                LIMIT 2000
+                //LIMIT 2000
             ];
             
             Integer deletedCount = 0;

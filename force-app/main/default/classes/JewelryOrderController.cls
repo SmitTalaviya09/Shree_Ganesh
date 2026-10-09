@@ -1692,7 +1692,7 @@ public static Map<String, String> createProductionBatch(
                 WHERE Current_Stage__c NOT IN ('Ready','Dispatched','Completed')
                 AND   Quantity__c > 0
                 ORDER BY Order_Date__c ASC, Priority__c ASC
-                LIMIT 500
+                // LIMIT 500
             ];
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
